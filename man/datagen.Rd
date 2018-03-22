@@ -15,7 +15,7 @@ tmax = NULL, suspar = NULL, transpar = NULL, powersus = NULL, powertrans = NULL,
 		
 kernel.par = NULL, spark = NULL, gamma = NULL, delta, suscov = NULL, 
 		
-transcov = NULL)
+transcov = NULL, seedval = NULL)
 
 }
 
@@ -70,6 +70,9 @@ Covariate matrix of the susceptibility function, representing each covariate in 
 }
   \item{transcov}{
 Covariate matrix of the transmissibility function, representing each covariate in a column. If intercept exists or in the case of no covariates, the first column is set to unity.
+}
+  \item{seedval}{
+  	An integer initialized seed value to fix the (Fortran) random number generator used in the simulation procedure. A random seed value is used as a defualt.
 }
 }
 
@@ -159,7 +162,6 @@ infectious diseases in large populations. \emph{Statistica Sinica}, 20(1):239.
 }
 
 \examples{
-library( EpiILMCT )
 ## Individual locations
 N<-50
 xx<-cbind(runif(N,0,10),runif(N,0,10))

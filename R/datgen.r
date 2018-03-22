@@ -1,9 +1,15 @@
-datagen <- function(type, kerneltype, kernelmatrix, distancekernel=NULL, initialepi=NULL, tmax=NULL, suspar=NULL, transpar=NULL, powersus=NULL, powertrans=NULL, kernel.par=NULL, spark=NULL, gamma=NULL, delta, suscov=NULL, transcov=NULL) {
+datagen <- function(type, kerneltype, kernelmatrix, distancekernel=NULL, initialepi=NULL, tmax=NULL, suspar=NULL, transpar=NULL, powersus=NULL, powertrans=NULL, kernel.par=NULL, spark=NULL, gamma=NULL, delta, suscov=NULL, transcov=NULL, seedval = NULL) {
     
     if (type == "SIR") {
 
 ####### For SIR ILMs:
 
+        if (is.null(seedval)) {
+            temp <- 0
+        } else {
+            temp <- seedval
+        }
+        
 		kernelpar <- vector(mode="double", length=2)		
 
 	# checking the type of the kernel function and specifying its parameters:
@@ -118,9 +124,9 @@ datagen <- function(type, kerneltype, kernelmatrix, distancekernel=NULL, initial
 	# checking whether initial infected individuals are specified or not:
 
 		if (is.null(initialepi)) {
-			initial      <- sample(seq(1, n), 1)
+            #			initial      <- sample(seq(1, n), 1)
 			observednum  <- 1
-			observedepi  <- c(initial,0,0,0)
+			observedepi  <- c(0,0,0,0)
 		} else {
 			if (length(initialepi[1,])!= 4) {
 				stop("Error: the initial epidemic must be a matrix of 4 columns: id number(s) of individual(s), removal time(s), infectious period(s) and infection time(s) of the initial infected individual(s)", call.=FALSE)
@@ -189,8 +195,10 @@ datagen <- function(type, kerneltype, kernelmatrix, distancekernel=NULL, initial
 
 		datgg<-.Fortran("datasimulation",	
 		n=as.integer(n),anum=as.integer(anum),num=as.integer(num),observednum=as.integer(observednum),
-		observedepi=as.matrix(as.double(observedepi),ncol=4,nrow=observednum),tmax=as.double(tmax),
-		suspar=as.vector(suspar,mode="double"),nsuspar=as.integer(nsuspar),powersus=as.vector(powersus,mode="double"),
+		observedepi=as.matrix(as.double(observedepi),ncol=4,nrow=observednum),
+        tmax=as.double(tmax), temp = as.integer(temp),
+		suspar=as.vector(suspar,mode="double"),nsuspar=as.integer(nsuspar),
+        powersus=as.vector(powersus,mode="double"),
 		transpar=as.vector(transpar,mode="double"),ntranspar=as.integer(ntranspar),
 		powertrans=as.vector(powertrans,mode="double"),
 		kernelpar=as.vector(kernelpar,mode="double"),spark=as.double(spark),delta1=as.double(deltain1),
@@ -207,6 +215,12 @@ datagen <- function(type, kerneltype, kernelmatrix, distancekernel=NULL, initial
     } else if (type == "SINR") {
 
 ####### For the SINR ILMs:
+
+        if (is.null(seedval)) {
+            temp <- 0
+        } else {
+            temp <- seedval
+        }
 
 		kernelpar <- vector(mode="double", length=2)		
 
@@ -320,9 +334,9 @@ datagen <- function(type, kerneltype, kernelmatrix, distancekernel=NULL, initial
 	# checking whether initial infected individuals are specified or not:
 
 		if (is.null(initialepi)) {
-			initial      <- sample(seq(1, n), 1)
+            #			initial      <- sample(seq(1, n), 1)
 			observednum  <- 1
-			observedepi  <- c(initial, 0, 0, 0, 0, 0)
+			observedepi  <- c(0, 0, 0, 0, 0, 0)
 		} else {
 			if (is.vector(initialepi)) {
 				if (length(initialepi)!= 6) {
@@ -403,15 +417,20 @@ datagen <- function(type, kerneltype, kernelmatrix, distancekernel=NULL, initial
 
 		datgg<-.Fortran("datasimulationsinr",	
 		n=as.integer(n),anum=as.integer(anum),num=as.integer(num),observednum=as.integer(observednum),
-		observedepi=as.matrix(as.double(observedepi),ncol=6,nrow=observednum),tmax=as.double(tmax),
-		suspar=as.vector(suspar,mode="double"),nsuspar=as.integer(nsuspar),powersus=as.vector(powersus,mode="double"),
+		observedepi=as.matrix(as.double(observedepi),ncol=6,nrow=observednum),
+        tmax=as.double(tmax), temp = as.integer(temp),
+		suspar=as.vector(suspar,mode="double"),nsuspar=as.integer(nsuspar),
+        powersus=as.vector(powersus,mode="double"),
 		transpar=as.vector(transpar,mode="double"),ntranspar=as.integer(ntranspar),
 		powertrans=as.vector(powertrans,mode="double"),
 		kernelpar=as.vector(kernelpar,mode="double"),
 		spark=as.double(spark),gamma=as.double(gamma),deltain1=as.double(deltain1),
 		deltain2=as.double(deltain2),deltanr1=as.double(deltanr1),deltanr2=as.double(deltanr2),
-		suscov=as.matrix(as.double(suscov),ncol=nsuspar,nrow=n),transcov=as.matrix(as.double(transcov),ncol=ntranspar,nrow=n),
-		cc=as.matrix(as.double(network),n,n),d3=as.matrix(as.double(distance),n,n),epidat=matrix(0,ncol=6,nrow=n) )
+		suscov=as.matrix(as.double(suscov),ncol=nsuspar,nrow=n),
+        transcov=as.matrix(as.double(transcov),ncol=ntranspar,nrow=n),
+		cc=as.matrix(as.double(network),n,n),
+        d3=as.matrix(as.double(distance),n,n),
+        epidat=matrix(0,ncol=6,nrow=n) )
 	  
 	# The output of the fortran function:
 

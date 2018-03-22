@@ -8,7 +8,9 @@ Epidemic summary plots
 Provides different plots summarizing epidemic
 }
 \usage{
-epiplot(type, kerneltype, epidat, location, network=NULL, plottype=NULL, time_index=NULL)
+epiplot(type, kerneltype, epidat, location, network = NULL, plottype = NULL, 
+
+time.index = NULL)
 }
 
 \arguments{
@@ -35,7 +37,7 @@ Contact network matrix. It is required when \code{kerneltype} is set to ``networ
   \item{plottype}{
 History or propagation plots of the epidemic.
 }
-  \item{time_index}{
+  \item{time.index}{
 Used for obtaining propagation plots at specific infection time points rather than at every infection time. A plot at the first time point is included in any chosen set of infection time points. The default is to provide propagation plot at every infection time point. It is not required when \code{plottype} is set to ``history''.
 }
 }
@@ -53,12 +55,11 @@ plot
 }
 
 \examples{
-library( EpiILMCT )
 ## network-based SIR ILMs:
 data(NetworkData)
 epiplot(type="SIR",kerneltype="network",epidat=NetworkData$epi,
 		location=NetworkData$loc,network=NetworkData$net,
-		plottype="propagation",time_index=seq(1,33,by=6))
+		plottype="propagation",time.index=seq(1,33,by=6))
 epiplot(type="SIR",kerneltype="network",epidat=NetworkData$epi,
 		location=NetworkData$loc,network=NetworkData$net,
 		plottype="history")
@@ -66,7 +67,7 @@ epiplot(type="SIR",kerneltype="network",epidat=NetworkData$epi,
 data(NetworkDataSINR)
 epiplot(type="SINR",kerneltype="network",epidat=NetworkDataSINR$epi,
 		location=NetworkDataSINR$loc,network=NetworkDataSINR$net,
-		plottype="propagation",time_index=seq(1,34,by=6))
+		plottype="propagation",time.index=seq(1,34,by=6))
 epiplot(type="SINR",kerneltype="network",epidat=NetworkDataSINR$epi,
 		location=NetworkDataSINR$loc,network=NetworkDataSINR$net,
 		plottype="history")
@@ -74,14 +75,14 @@ epiplot(type="SINR",kerneltype="network",epidat=NetworkDataSINR$epi,
 data(SpatialData)
 epiplot(type="SIR",kerneltype="distance",epidat=SpatialData$epi,
 		location=SpatialData$loc,plottype="propagation",
-		time_index=seq(1,33,by=6))
+		time.index=seq(1,33,by=6))
 epiplot(type="SIR",kerneltype="distance",epidat=SpatialData$epi,
 		location=SpatialData$loc,plottype="history")
 ## distance and network-based SIR ILMs:
 data(SpatialNetData)
 epiplot(type="SIR",kerneltype="both",epidat=SpatialNetData$epi,
 		location=SpatialNetData$loc,network= SpatialNetData $net,
-		plottype="propagation",time_index=seq(1,21,by=6))
+		plottype="propagation",time.index=seq(1,21,by=6))
 epiplot(type="SIR",kerneltype="both",epidat=SpatialNetData$epi,
 		location=SpatialNetData$loc,network= SpatialNetData $net,
 		plottype="history")

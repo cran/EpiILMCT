@@ -11,32 +11,32 @@
 #
 #     This program is free software; you can redistribute it and/or
 #     modify it under the terms of the GNU General Public License,
-#     version 3, as published by the Free Software Founepidation.
-# 
+#     version 3, as published by the Free Software Foundation.
+#
 #     This program is distributed in the hope that it will be useful,
 #     but without any warranty; without even the implied warranty of
 #     merchantability or fitness for a particular purpose.  See the GNU
 #     General Public License, version 3, for more details.
-# 
+#
 #     A copy of the GNU General Public License, version 3, is available
 #     at http://www.r-project.org/Licenses/GPL-3
-# 
+#
 # Part of the R/EpiILMCT package
 #
 ######################################################################
 
-epiplot<- function(type, kerneltype, epidat, location, network = NULL, plottype = NULL, time_index = NULL) {
+epiplot<- function(type, kerneltype, epidat, location, network = NULL, plottype = NULL, time.index = NULL) {
 
     k1 <- sum(epidat[,2] != Inf)
     n <- length(epidat[,1])
 
-	if (is.null(time_index)) {
+	if (is.null(time.index)) {
 		ss <- c(seq(1, k1))
 	} else {
-		if (1 %in% time_index) { 
-			ss <- sort(time_index)
+		if (1 %in% time.index) { 
+			ss <- sort(time.index)
 		} else {
-			ss <- c(1, sort(time_index))
+			ss <- c(1, sort(time.index))
 		}
 	}
 
@@ -49,22 +49,17 @@ epiplot<- function(type, kerneltype, epidat, location, network = NULL, plottype 
 	} else if (length(ss) <= 6 & length(ss) > 4) {
 		a <- 2
 		b <- 3
-	} else if (length(ss) <= 9 & length(ss) > 6) {
-		a <- 3
-		b <- 3
-	} else if (length(ss) <= 12 & length(ss) > 9) {
-		a <- 4
-		b <- 3
-	} else {
-		a <- 4
-		b <- 4
-	}				
+    } else if (length(ss) > 9) {
+        a <- 3
+        b <- 3
+    }
 
 if (plottype == "propagation") {    
     if (kerneltype == "distance") {
         if (type == "SIR") {
 
-			par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+			op <- par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+            on.exit(par(op))
             
             plot(location[, 1], location[, 2], xlim = c(floor(min(location[, 1])), ceiling(max(location[, 1]))),
             ylim = c(floor(min(location[, 2])), ceiling(max(location[, 2]))), panel.first = grid(),
@@ -80,19 +75,26 @@ if (plottype == "propagation") {
 				points(location[epidat[infectious, 1], 1], location[epidat[infectious, 1], 2], col = "red", pch = 19)
 				points(location[epidat[removed, 1], 1], location[epidat[removed, 1], 2], col = "green", pch = 19)
 				points(location[epidat[ss[m], 1], 1], location[epidat[ss[m], 1], 2], col = "blue", pch = 19)
+                
+                if (any(m == seq.int(9, n, 9)) | (m == length(ss))) {
+                    opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0),
+                    mar = c(0, 0, 0, 0), new = TRUE)
+                    on.exit(par(opar))
+                    plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
+                    legend("bottom", legend = c("susceptible", "newly-infected", "infectious","removed"),
+                    pch = 20, col = c("gray", "blue", "red", "green"),
+                    horiz = TRUE, bty = 'n', cex = 0.9)
+                    
+                    op <- par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+                    on.exit(par(op))
+                }
+
             }
-            
-			opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), 
-			mar = c(0, 0, 0, 0), new = TRUE)
-			on.exit(par(opar))
-			plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
-			legend("bottom", legend = c("susceptible", "newly-infected", "infectious", "removed"), 
-			pch = 20, col = c("gray", "blue", "red", "green"),
-			horiz = TRUE, bty = 'n', cex = 0.9)
             
         } else if (type == "SINR") {
 
-			par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+			op <- par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+            on.exit(par(op))
             
             plot(location[, 1], location[, 2], xlim = c(floor(min(location[, 1])), ceiling(max(location[, 1]))),
             ylim = c(floor(min(location[, 2])), ceiling(max(location[, 2]))), panel.first = grid(),
@@ -110,15 +112,22 @@ if (plottype == "propagation") {
 				points(location[epidat[notified, 1], 1], location[epidat[notified, 1], 2], col = "yellow", pch = 19)
 				points(location[epidat[removed, 1], 1], location[epidat[removed, 1], 2], col = "green", pch = 19)
 				points(location[epidat[ss[m], 1], 1], location[epidat[ss[m], 1], 2], col = "blue", pch = 19)
+                
+                if (any(m == seq.int(9, n, 9)) | (m == length(ss))) {
+                    opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0),
+                    mar = c(0, 0, 0, 0), new = TRUE)
+                    on.exit(par(opar))
+                    plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
+                    legend("bottom", legend = c("susceptible", "newly-infected", "infectious", "notified", "removed"),
+                    pch = 20, col = c("gray", "blue", "red", "yellow", "green"),
+                    horiz = TRUE, bty = 'n', cex = 0.9)
+
+                    op <- par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+                    on.exit(par(op))
+                }
+
             }
             
-			opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), 
-			mar = c(0, 0, 0, 0), new = TRUE)
-			on.exit(par(opar))
-			plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
-			legend("bottom", legend = c("susceptible", "newly-infected", "infectious", "notified", "removed"), 
-			pch = 20, col = c("gray", "blue", "red", "yellow", "green"),
-			horiz = TRUE, bty = 'n', cex = 0.9)
         }
                
     } else if (kerneltype == "network") {
@@ -128,7 +137,8 @@ if (plottype == "propagation") {
         } else if (all(network %in% 0:1)) {
 
 			if (type == "SIR") {
-			par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+			op <- par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+            on.exit(par(op))
 
 				plot(location[, 1], location[, 2], xlim = c(floor(min(location[, 1])), ceiling(max(location[, 1]))),
 				ylim = c(floor(min(location[, 2])), ceiling(max(location[, 2]))), panel.first = grid(),
@@ -184,18 +194,26 @@ if (plottype == "propagation") {
 							location[epidat[ss[m], 1], 1], location[epidat[ss[m], 1], 2], col = "blue", code = 2, length = 0.09)
 						}# network if-condition
 					}# j for-loop
+                    
+                    if (any(m == seq.int(9, n, 9)) | (m == length(ss))) {
+                        opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0),
+                        mar = c(0, 0, 0, 0), new = TRUE)
+                        on.exit(par(opar))
+                        plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
+                        legend("bottom", legend = c("susceptible", "newly-infected", "infectious","removed"),
+                        pch = 20, col = c("gray", "blue", "red", "green"),
+                        horiz = TRUE, bty = 'n', cex = 0.9)
+
+                        op <- par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+                        on.exit(par(op))
+                    }
+
 				}
-			opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), 
-			mar = c(0, 0, 0, 0), new = TRUE)
-			on.exit(par(opar))
-			plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
-			legend("bottom", legend = c("susceptible", "newly-infected", "infectious","removed"), 
-			pch = 20, col = c("gray", "blue", "red", "green"),
-			horiz = TRUE, bty = 'n', cex = 0.9)
 					
 			} else if (type == "SINR") {
 
-			par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+			op <- par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+            on.exit(par(op))
 
 				plot(location[, 1], location[, 2], xlim = c(floor(min(location[, 1])), ceiling(max(location[, 1]))),
 				ylim = c(floor(min(location[, 2])), ceiling(max(location[, 2]))), panel.first = grid(),
@@ -257,21 +275,29 @@ if (plottype == "propagation") {
 							location[epidat[ss[m], 1], 1], location[epidat[ss[m], 1], 2], col = "blue", code = 2, length = 0.09)
 						}# network if-condition
 					}# j for-loop
+                    
+                    if (any(m == seq.int(9, n, 9)) | (m == length(ss))) {
+                        opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0),
+                        mar = c(0, 0, 0, 0), new = TRUE)
+                        on.exit(par(opar))
+                        plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
+                        legend("bottom", legend = c("susceptible", "newly-infected", "infectious", "notified", "removed"),
+                        pch = 20, col = c("gray", "blue", "red", "yellow", "green"),
+                        horiz = TRUE, bty = 'n', cex = 0.9)
+                        
+                        op <- par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+                        on.exit(par(op))
+                    }
+
 				}
-			opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), 
-			mar = c(0, 0, 0, 0), new = TRUE)
-			on.exit(par(opar))
-			plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
-			legend("bottom", legend = c("susceptible", "newly-infected", "infectious", "notified", "removed"), 
-			pch = 20, col = c("gray", "blue", "red", "yellow", "green"),
-			horiz = TRUE, bty = 'n', cex = 0.9)
 			}
 
 		} else {
 
 			if (type == "SIR") {
 
-			par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+			op <- par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+            on.exit(par(op))
 			
 				plot(location[, 1], location[, 2], xlim = c(floor(min(location[,1])), ceiling(max(location[, 1]))),
 				ylim = c(floor(min(location[, 2])), ceiling(max(location[, 2]))), panel.first = grid(),
@@ -287,19 +313,26 @@ if (plottype == "propagation") {
 					points(location[epidat[infectious, 1], 1], location[epidat[infectious, 1], 2], col = "red", pch = 19)
 					points(location[epidat[removed, 1], 1], location[epidat[removed, 1], 2], col = "green", pch = 19)
 					points(location[epidat[ss[m], 1], 1], location[epidat[ss[m], 1], 2], col = "blue", pch = 19)
+                    
+                    if (any(m == seq.int(9, n, 9)) | (m == length(ss))) {
+                        opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0),
+                        mar = c(0, 0, 0, 0), new = TRUE)
+                        on.exit(par(opar))
+                        plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
+                        legend("bottom", legend = c("susceptible", "newly-infected", "infectious", "removed"),
+                        pch = 20, col = c("gray", "blue", "red", "green"),
+                        horiz = TRUE, bty = 'n', cex = 0.9)
+
+                        op <- par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+                        on.exit(par(op))
+                    }
+
 				}
-			
-			opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), 
-			mar = c(0, 0, 0, 0), new = TRUE)
-			on.exit(par(opar))
-			plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
-			legend("bottom", legend = c("susceptible", "newly-infected", "infectious", "removed"), 
-			pch = 20, col = c("gray", "blue", "red", "green"),
-			horiz = TRUE, bty = 'n', cex = 0.9)
-			
+						
 			} else if (type == "SINR") {
 
-				par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+				op <- par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+                on.exit(par(op))
 		
 				plot(location[, 1], location[, 2], xlim = c(floor(min(location[, 1])), ceiling(max(location[, 1]))),
 				ylim = c(floor(min(location[, 2])), ceiling(max(location[, 2]))), panel.first = grid(),
@@ -317,15 +350,22 @@ if (plottype == "propagation") {
 					points(location[epidat[notified, 1], 1], location[epidat[notified, 1], 2], col = "yellow", pch = 19)
 					points(location[epidat[removed, 1], 1], location[epidat[removed, 1], 2], col = "green", pch = 19)
 					points(location[epidat[ss[m], 1], 1], location[epidat[ss[m], 1], 2], col = "blue", pch = 19)
+                    
+                    if (any(m == seq.int(9, n, 9)) | (m == length(ss))) {
+                        opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0),
+                        mar = c(0, 0, 0, 0), new = TRUE)
+                        on.exit(par(opar))
+                        plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
+                        legend("bottom", legend = c("susceptible", "newly-infected", "infectious", "notified", "removed"),
+                        pch = 20, col = c("gray", "blue", "red", "yellow", "green"),
+                        horiz = TRUE, bty = 'n', cex = 0.9)
+
+                        op <- par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+                        on.exit(par(op))
+                    }
+
 				}
 			
-			opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), 
-			mar = c(0, 0, 0, 0), new = TRUE)
-			on.exit(par(opar))
-			plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
-			legend("bottom", legend = c("susceptible", "newly-infected", "infectious", "notified", "removed"), 
-			pch = 20, col = c("gray", "blue", "red", "yellow", "green"),
-			horiz = TRUE, bty = 'n', cex = 0.9)
 			}
 						
 		}
@@ -336,7 +376,8 @@ if (plottype == "propagation") {
 				
 			if (type == "SIR") {
 
-				par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+				op <- par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+                on.exit(par(op))
 
 				plot(location[, 1], location[, 2], xlim = c(floor(min(location[,1])), ceiling(max(location[, 1]))),
 				ylim = c(floor(min(location[, 2])), ceiling(max(location[, 2]))), panel.first = grid(),
@@ -392,19 +433,26 @@ if (plottype == "propagation") {
 							location[epidat[ss[m], 1], 1],location[epidat[ss[m], 1], 2], col = "blue")
 						}# network if-condition
 					}# j for-loop
+                    
+                    if (any(m == seq.int(9, n, 9)) | (m == length(ss))) {
+                        opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0),
+                        mar = c(0, 0, 0, 0), new = TRUE)
+                        on.exit(par(opar))
+                        plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
+                        legend("bottom", legend = c("susceptible", "newly-infected", "infectious", "removed"),
+                        pch = 20, col = c("gray", "blue", "red", "green"),
+                        horiz = TRUE, bty = 'n', cex = 0.9)
+                        
+                        op <- par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+                        on.exit(par(op))
+                    }
+
 				}
-				
-			opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), 
-			mar = c(0, 0, 0, 0), new = TRUE)
-			on.exit(par(opar))
-			plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
-			legend("bottom", legend = c("susceptible", "newly-infected", "infectious", "removed"), 
-			pch = 20, col = c("gray", "blue", "red", "green"),
-			horiz = TRUE, bty = 'n', cex = 0.9)
-					
+									
 			} else if (type == "SINR") {
 
-				par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+				op <- par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+                on.exit(par(op))
 
 				plot(location[, 1], location[, 2], xlim = c(floor(min(location[, 1])), ceiling(max(location[, 1]))),
 				ylim = c(floor(min(location[, 2])), ceiling(max(location[, 2]))), panel.first = grid(),
@@ -460,21 +508,30 @@ if (plottype == "propagation") {
 							location[epidat[ss[m], 1], 1], location[epidat[ss[m], 1], 2], col = "blue")
 						}# network if-condition
 					}# j for-loop
+                    
+                    if (any(m == seq.int(9, n, 9)) | (m == length(ss))) {
+                        opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0),
+                        mar = c(0, 0, 0, 0), new = TRUE)
+                        on.exit(par(opar))
+                        plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
+                        legend("bottom", legend = c("susceptible", "newly-infected", "infectious", "notified", "removed"),
+                        pch = 20, col = c("gray", "blue", "red", "yellow", "green"),
+                        horiz = TRUE, bty = 'n', cex = 0.9)
+
+                        op <- par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+                        on.exit(par(op))
+                    }
+
 				}
-			opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), 
-			mar = c(0, 0, 0, 0), new = TRUE)
-			on.exit(par(opar))
-			plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
-			legend("bottom", legend = c("susceptible", "newly-infected", "infectious", "notified", "removed"), 
-			pch = 20, col = c("gray", "blue", "red", "yellow", "green"),
-			horiz = TRUE, bty = 'n', cex = 0.9)
-			}
+
+            }
 
 		} else {
 
 			if (type == "SIR") {
 							
-				par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+				op <- par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+                on.exit(par(op))
 			
 				plot(location[, 1], location[, 2], xlim = c(floor(min(location[, 1])), ceiling(max(location[, 1]))),
 				ylim = c(floor(min(location[, 2])), ceiling(max(location[, 2]))), panel.first = grid(),
@@ -490,19 +547,26 @@ if (plottype == "propagation") {
 					points(location[epidat[infectious, 1], 1], location[epidat[infectious, 1], 2], col = "red", pch = 19)
 					points(location[epidat[removed, 1], 1], location[epidat[removed, 1], 2], col = "green", pch = 19)
 					points(location[epidat[ss[m], 1], 1], location[epidat[ss[m], 1], 2], col = "blue", pch = 19)
+                    
+                    if (any(m == seq.int(9, n, 9)) | (m == length(ss))) {
+                        opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0),
+                        mar = c(0, 0, 0, 0), new = TRUE)
+                        on.exit(par(opar))
+                        plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
+                        legend("bottom", legend = c("susceptible", "newly-infected", "infectious", "removed"),
+                        pch = 20, col = c("gray", "blue", "red", "green"),
+                        horiz = TRUE, bty = 'n', cex = 0.9)
+                        
+                        op <- par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+                        on.exit(par(op))
+                    }
+
 				}
-			
-			opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), 
-			mar = c(0, 0, 0, 0), new = TRUE)
-			on.exit(par(opar))
-			plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
-			legend("bottom", legend = c("susceptible", "newly-infected", "infectious", "removed"), 
-			pch = 20, col = c("gray", "blue", "red", "green"),
-			horiz = TRUE, bty = 'n', cex = 0.9)
-			
+						
 			} else if (type == "SINR") {
 
-				par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+				op <- par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+                on.exit(par(op))
 			
 				plot(location[, 1], location[, 2], xlim = c(floor(min(location[, 1])), ceiling(max(location[, 1]))),
 				ylim = c(floor(min(location[, 2])), ceiling(max(location[, 2]))), panel.first = grid(),
@@ -520,15 +584,22 @@ if (plottype == "propagation") {
 					points(location[epidat[notified, 1], 1], location[epidat[notified, 1], 2], col = "yellow", pch = 19)
 					points(location[epidat[removed, 1], 1], location[epidat[removed, 1], 2], col = "green", pch = 19)
 					points(location[epidat[ss[m], 1], 1], location[epidat[ss[m], 1], 2], col = "blue", pch = 19)
+                    
+                    if (any(m == seq.int(9, n, 9)) | (m == length(ss))) {
+                        opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0),
+                        mar = c(0, 0, 0, 0), new = TRUE)
+                        on.exit(par(opar))
+                        plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
+                        legend("bottom", legend = c("susceptible", "newly-infected", "infectious", "notified", "removed"),
+                        pch = 20, col = c("gray", "blue", "red", "yellow", "green"),
+                        horiz = TRUE, bty = 'n', cex = 0.9)
+                        
+                        op <- par(mar = c(3.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(a, b))
+                        on.exit(par(op))
+                    }
+
 				}
 			
-			opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), 
-			mar = c(0, 0, 0, 0), new = TRUE)
-			on.exit(par(opar))
-			plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
-			legend("bottom", legend = c("susceptible", "newly-infected", "infectious", "notified", "removed"), 
-			pch = 20, col = c("gray", "blue", "red", "yellow", "green"),
-			horiz = TRUE, bty = 'n', cex = 0.9)
 			}
 						
 		}
@@ -539,7 +610,8 @@ if (plottype == "propagation") {
 } else if (plottype == "history") {
 
 	if (type == "SIR") {
-		par(mfrow = c(2, 2))
+        op <- par(mar = c(5.1, 4.1, 4.1, 2.1), omi = c(0, 0, 0, 0), mfrow = c(2, 2))
+        on.exit(par(op))
 		k1 <- sum(epidat[, 2] != Inf)
 		plot(density(epidat[1:k1, 4], from = min(epidat[1:k1, 4])), main = "Epidemic curve of \n the infection times", xlab = "Infection times")
 		plot(density(epidat[1:k1, 2], from = min(epidat[1:k1, 2])), main = "Epidemic curve of \n the removal times", xlab = "Removal times")
@@ -549,7 +621,8 @@ if (plottype == "propagation") {
 		polygon(c(seq(1, k1), rev(seq(1, k1))), c(epidat[1:k1, 4], rev(epidat[1:k1, 2])), col = "red", border = NA)
 	
 	} else if (type == "SINR") {
-		par(mfrow = c(2, 2))
+        op <- par(mar = c(5.1, 4.1, 4.1, 2.1), omi = c(0, 0, 0, 0), mfrow = c(2, 2))
+        on.exit(par(op))
 		k1 <- sum(epidat[, 2] != Inf)
 		plot(density(epidat[1:k1, 6], from = min(epidat[1:k1, 6])), main = "Epidemic curve of \n the infection times", xlab = "Infection times")
 		plot(density(epidat[1:k1, 4], from = min(epidat[1:k1, 4])), main = "Epidemic curve of \n the notification times", xlab = "Notification times")

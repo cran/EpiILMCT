@@ -10,10 +10,10 @@
 !#     MCMC tools for SIR continuous-time ILMs:
 !#
 !#     This program is free software; you can redistribute it and/or
-!#     modify it under the terms of the GNU General Public License,
+!#     modify it under the terms of the GNU General Public License, 
 !#     version 3, as published by the Free Software Foundation.
 !# 
-!#     This program is distributed in the hope that it will be useful,
+!#     This program is distributed in the hope that it will be useful, 
 !#     but without any warranty; without even the implied warranty of
 !#     merchantability or fitness for a particular purpose.  See the GNU
 !#     General Public License, version 3, for more details.
@@ -25,114 +25,119 @@
 !# Contains: 
 !#           mcmcsir ..................... subroutine
 !#           likelihoodSIR ............... subroutine
-!#           halfnormalden .............. function
-!#           gammadensity ............... function
-!#           uniformden ................. function
-!#           randnormal ................. function
-!#           randgamma .................. function
-!#           initrandomseedsir .............. subroutine
-!#           RANSAMsir .................. subroutine
+!#           halfnormalden ............... function
+!#           gammadensity ................ function
+!#           uniformden .................. function
+!#           randnormal .................. function
+!#           randgamma ................... function
+!#           initrandomseedsir ........... subroutine
+!#           RANSAMsir ................... subroutine
 !#
 !######################################################################
 module sir
     use ISO_C_BINDING
     implicit none
-    public:: mcmcsir
+    public :: mcmcsir
 
 contains
 
 
-    subroutine mcmcsir(n,nsim,ni,num,anum2,nsuspar,ntranspar,net,dis,epidat,blockupdate,&
-    & priordistsuspar,priordisttranspar,priordistkernelparpar,priordistsparkpar, &
-    & priordistpowersus,priordistpowertrans,&
-    & suspar,suscov,powersus,transpar,transcov,powertrans,kernelpar,spark,delta1,delta2,&
-    & kernelparproposalvar,sparkproposalvar,susproposalvar,powersusproposalvar,&
-    & transproposalvar,powertransproposalvar,infperiodproposal,&
-    & priorpar1sus,priorpar2sus,&
-    & priorpar1powersus,priorpar2powersus,&
-    & priorpar1trans,priorpar2trans, &
-    & priorpar1powertrans,priorpar2powertrans, &
-    & kernelparprior,sparkprior,delta2prior,susparop,powersusparop,transparop,powertransparop,&
-    & kernelparop,sparkop,delta1op,&
-    & delta2op,epidatmcper,epidatmctim,epidatmcrem,loglik) bind(C, name="mcmcsir_")
+    subroutine mcmcsir(n, nsim, ni, num, anum2, temp, nsuspar, ntranspar, net, dis, epidat, blockupdate, &
+    & priordistsuspar, priordisttranspar, priordistkernelparpar, priordistsparkpar, &
+    & priordistpowersus, priordistpowertrans, &
+    & suspar, suscov, powersus, transpar, transcov, powertrans, kernelpar, spark, delta1, &
+    & kernelparproposalvar, sparkproposalvar, susproposalvar, powersusproposalvar, &
+    & transproposalvar, powertransproposalvar, infperiodproposal, &
+    & priorpar1sus, priorpar2sus, &
+    & priorpar1powersus, priorpar2powersus, &
+    & priorpar1trans, priorpar2trans, &
+    & priorpar1powertrans, priorpar2powertrans, &
+    & kernelparprior, sparkprior, delta2prior, susparop, powersusparop, transparop, powertransparop, &
+    & kernelparop, sparkop, delta1op, &
+    & delta2op, epidatmcper, epidatmctim, epidatmcrem, loglik) bind(C, name="mcmcsir_")
 
     external infinity_value
 
     !Declarations
-    integer (C_INT), intent(in):: n, nsim, ni,nsuspar,ntranspar,num
+    integer (C_INT), intent(in) :: n, nsim, ni, nsuspar, ntranspar, num
+    integer (C_INT), intent(in) :: temp
 ! to inndicate the function for updating each parameter or not:
-    integer (C_INT), intent(in), dimension(7):: anum2
+    integer (C_INT), intent(in), dimension(7) :: anum2
 ! prior distributions:
-    integer (C_INT), intent(in), dimension(ntranspar):: priordisttranspar,priordistpowertrans
-    integer (C_INT), intent(in), dimension(nsuspar):: priordistsuspar,priordistpowersus
-    integer (C_INT), intent(in), dimension(2):: priordistkernelparpar
-    integer (C_INT), intent(in):: priordistsparkpar
+    integer (C_INT), intent(in), dimension(ntranspar) :: priordisttranspar, priordistpowertrans
+    integer (C_INT), intent(in), dimension(nsuspar) :: priordistsuspar, priordistpowersus
+    integer (C_INT), intent(in), dimension(2) :: priordistkernelparpar
+    integer (C_INT), intent(in) :: priordistsparkpar
 ! for updating infection times/infectious periods in blocks:
-    integer (C_INT), intent(in), dimension(2):: blockupdate
-    integer (C_INT) :: obs_inf_time,sizeblock
+    integer (C_INT), intent(in), dimension(2) :: blockupdate
+    integer (C_INT)  :: obs_inf_time, sizeblock
 ! epidemic data:
-    real (C_DOUBLE), intent(in), dimension(n,4):: epidat
-    real (C_DOUBLE), dimension(n,4):: epidat3current,epidat3update,epidat3
+    real (C_DOUBLE), intent(in), dimension(n, 4) :: epidat
+    real (C_DOUBLE), dimension(n, 4) :: epidat3current, epidat3update, epidat3
 ! distance and network matrices:
-    real (C_DOUBLE), intent(in), dimension(n,n):: dis,net
+    real (C_DOUBLE), intent(in), dimension(n, n) :: dis, net
 ! susceptibility and transmissibility covariates:
-    real (C_DOUBLE), intent(in), dimension(n,nsuspar):: suscov
-    real (C_DOUBLE), intent(in), dimension(n,ntranspar):: transcov
+    real (C_DOUBLE), intent(in), dimension(n, nsuspar) :: suscov
+    real (C_DOUBLE), intent(in), dimension(n, ntranspar) :: transcov
 ! The variance of the normal proposal distributions and the parameters of the prior distributions of the model parameters:
-    real (C_DOUBLE), intent(in), dimension(ntranspar):: transproposalvar,priorpar1trans,priorpar2trans
-    real (C_DOUBLE), intent(in), dimension(ntranspar):: powertransproposalvar,priorpar1powertrans,priorpar2powertrans
-    real (C_DOUBLE), intent(in), dimension(nsuspar):: susproposalvar,priorpar1sus,priorpar2sus
-    real (C_DOUBLE), intent(in), dimension(nsuspar):: powersusproposalvar,priorpar1powersus,priorpar2powersus
-    real (C_DOUBLE), intent(in), dimension(2):: sparkprior,kernelparproposalvar
-    real (C_DOUBLE), intent(in) :: sparkproposalvar
-    real (C_DOUBLE), intent(in), dimension(2,2):: kernelparprior
+    real (C_DOUBLE), intent(in), dimension(ntranspar) :: transproposalvar, priorpar1trans, priorpar2trans
+    real (C_DOUBLE), intent(in), dimension(ntranspar) :: powertransproposalvar, priorpar1powertrans, priorpar2powertrans
+    real (C_DOUBLE), intent(in), dimension(nsuspar) :: susproposalvar, priorpar1sus, priorpar2sus
+    real (C_DOUBLE), intent(in), dimension(nsuspar) :: powersusproposalvar, priorpar1powersus, priorpar2powersus
+    real (C_DOUBLE), intent(in), dimension(2) :: sparkprior, kernelparproposalvar
+    real (C_DOUBLE), intent(in)  :: sparkproposalvar
+    real (C_DOUBLE), intent(in), dimension(2, 2) :: kernelparprior
 ! parameters of the prior distribution of the infectious period rate and gamma proposal distribution of the independenc sampler:
-    real (C_DOUBLE), intent(in), dimension(2):: delta2prior,infperiodproposal
+    real (C_DOUBLE), intent(in), dimension(2) :: delta2prior, infperiodproposal
 ! initial values
-    real (C_DOUBLE), intent(in), dimension(ntranspar):: transpar,powertrans
-    real (C_DOUBLE), intent(in), dimension(nsuspar):: suspar,powersus
-    real (C_DOUBLE), intent(in), dimension(2):: kernelpar
-    real (C_DOUBLE), intent(in):: spark,delta1,delta2
+    real (C_DOUBLE), intent(in), dimension(ntranspar) :: transpar, powertrans
+    real (C_DOUBLE), intent(in), dimension(nsuspar) :: suspar, powersus
+    real (C_DOUBLE), intent(in), dimension(2) :: kernelpar
+    real (C_DOUBLE), intent(in) :: spark
+    real (C_DOUBLE), intent(in), dimension(2) :: delta1
 ! OUTPUT:
-    real (C_DOUBLE), dimension(nsim,1),intent(out):: delta1op,delta2op
-    real (C_DOUBLE), dimension(nsim,n),intent(out):: epidatmcper,epidatmctim,epidatmcrem
-    real (C_DOUBLE), dimension(nsim,1),intent(out):: sparkop,loglik
-    real (C_DOUBLE), dimension(nsim,2),intent(out):: kernelparop
-    real (C_DOUBLE), dimension(nsim,ntranspar),intent(out):: transparop,powertransparop
-    real (C_DOUBLE), dimension(nsim,nsuspar),intent(out):: susparop,powersusparop
+    real (C_DOUBLE), dimension(nsim, 1), intent(out) :: delta1op, delta2op
+    real (C_DOUBLE), dimension(nsim, n), intent(out) :: epidatmcper, epidatmctim, epidatmcrem
+    real (C_DOUBLE), dimension(nsim, 1), intent(out) :: sparkop, loglik
+    real (C_DOUBLE), dimension(nsim, 2), intent(out) :: kernelparop
+    real (C_DOUBLE), dimension(nsim, ntranspar), intent(out) :: transparop, powertransparop
+    real (C_DOUBLE), dimension(nsim, nsuspar), intent(out) :: susparop, powersusparop
 
-    real (C_DOUBLE), dimension(nsuspar):: postparsusupdate,postparsuscurrent
-    real (C_DOUBLE), dimension(ntranspar):: postpartransupdate,postpartranscurrent
+    real (C_DOUBLE), dimension(nsuspar) :: postparsusupdate, postparsuscurrent
+    real (C_DOUBLE), dimension(ntranspar) :: postpartransupdate, postpartranscurrent
 
-    real (C_DOUBLE):: postsparkupdate
-    real (C_DOUBLE), dimension(2):: postkernelparupdate,postkernelparcurrent
+    real (C_DOUBLE) :: postsparkupdate
+    real (C_DOUBLE), dimension(2) :: postkernelparupdate, postkernelparcurrent
+    real (C_doUBLE), dimension(2) :: infperiodproposal1
 
-    real (C_DOUBLE):: ratio1,ratio2,ratio3,ratio4,ratio5
-    real (C_DOUBLE):: psi1,psi2,psi3,psi4,psi5
-    real (C_DOUBLE):: u1,u2,u3,u4,u5
-    real (C_DOUBLE):: valueupdate1,valuecurrent1
-    real (C_DOUBLE):: valueupdate2,valuecurrent2
-    real (C_DOUBLE):: valueupdate3,valuecurrent3
-    real (C_DOUBLE):: valueupdate4,valuecurrent4
-    real (C_DOUBLE):: valueupdate5,valuecurrent5
-    real (C_DOUBLE):: valueffupdate,valueffcurrent
-    real (C_DOUBLE):: valuefupdate1,valuefcurrent1
-    real (C_DOUBLE):: valuefupdate2,valuefcurrent2
-    real (C_DOUBLE):: valuefupdate3,valuefcurrent3
-    real (C_DOUBLE):: valuefupdate4,valuefcurrent4
-    real (C_DOUBLE):: valuefupdate5,valuefcurrent5,denupdate,dencurrent
-    real (C_DOUBLE):: zparsus,zpartrans,zkernelpar,zspark
-    integer (C_INT):: j,r,nblock,m,mn
-    integer (C_INT):: abs32,abs33,abs34,abs35
-    real (C_DOUBLE):: Inf
+    real (C_DOUBLE) :: ratio1, ratio2, ratio3, ratio4, ratio5
+    real (C_DOUBLE) :: psi1, psi2, psi3, psi4, psi5
+    real (C_DOUBLE) :: u1, u2, u3, u4, u5
+    real (C_DOUBLE) :: valueupdate1, valuecurrent1
+    real (C_DOUBLE) :: valueupdate2, valuecurrent2
+    real (C_DOUBLE) :: valueupdate3, valuecurrent3
+    real (C_DOUBLE) :: valueupdate4, valuecurrent4
+    real (C_DOUBLE) :: valueupdate5, valuecurrent5
+    real (C_DOUBLE) :: valueffupdate, valueffcurrent
+    real (C_DOUBLE) :: valuefupdate1, valuefcurrent1
+    real (C_DOUBLE) :: valuefupdate2, valuefcurrent2
+    real (C_DOUBLE) :: valuefupdate3, valuefcurrent3
+    real (C_DOUBLE) :: valuefupdate4, valuefcurrent4
+    real (C_DOUBLE) :: valuefupdate5, valuefcurrent5, denupdate, dencurrent
+    real (C_DOUBLE) :: zparsus, zpartrans, zkernelpar, zspark
+    integer (C_INT) :: i, j, r, nblock, m, mn
+    integer (C_INT) :: abs32, abs33, abs34, abs35
+    real (C_DOUBLE) :: Inf, loglik66, infdens
 
-    integer (C_INT), allocatable, dimension(:,:) :: amcmc
-    integer (C_INT), allocatable, dimension(:) :: amcmc1
-    integer (C_INT), dimension(ni) :: it,xxindic
+    integer (C_INT), allocatable, dimension(:, :)  :: amcmc
+    integer (C_INT), allocatable, dimension(:)  :: amcmc1
+    integer (C_INT), dimension(ni)  :: it, xxindic
 
         call infinity_value(Inf)
 
-        call initrandomseedsir()
+    if(temp .ne. 0) then
+       call initrandomseedsir(temp)
+    end if
 
         obs_inf_time = blockupdate(1)
         sizeblock    = blockupdate(2)
@@ -178,35 +183,58 @@ contains
 
 ! Initial values for the MCMC updates:
 
-        delta1op(1,1) = delta1
+        delta1op(1, 1) = delta1(1)
 
-        delta2op(1,1) = delta2
+        delta2op(1, 1) = delta1(2)
 
-        if(anum2(1) .eq. 1) then
-        epidat3(:,1)       = epidat(:,1)
-        epidat3(:,2)       = epidat(:,2)
-        epidat3(:,3)       = epidat(:,3)
-        epidat3(:,4)       = epidat(:,4)
+        if (anum2(1) .eq. 1) then
+        epidat3(:, 1)       = epidat(:, 1)
+        epidat3(:, 2)       = epidat(:, 2)
+        epidat3(:, 3)       = epidat(:, 3)
+        epidat3(:, 4)       = epidat(:, 4)
 
-        else if(anum2(1) .eq. 2)then
+        else if (anum2(1) .eq. 2) then
         epidat3 = epidat
         end if
 
-        epidatmcper(1,1:n) = (/epidat3(1:n,3)/)
-        epidatmctim(1,1:n) = (/epidat3(1:n,4)/)
-        epidatmcrem(1,1:n) = (/epidat3(1:n,2)/)
+        epidatmcper(1, 1:n) = (/epidat3(1:n, 3)/)
+        epidatmctim(1, 1:n) = (/epidat3(1:n, 4)/)
+        epidatmcrem(1, 1:n) = (/epidat3(1:n, 2)/)
 
-        kernelparop(1,:) = kernelpar
-        sparkop(1,1) = spark
-        transparop(1,:) = transpar
-        susparop(1,:) = suspar
-        powertransparop(1,:) = powertrans
-        powersusparop(1,:) = powersus
+        kernelparop(1, :) = kernelpar
+        sparkop(1, 1) = spark
+        transparop(1, :) = transpar
+        susparop(1, :) = suspar
+        powertransparop(1, :) = powertrans
+        powersusparop(1, :) = powersus
 
 ! calculate the loglikelihood with the initial values:
-        call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3,&
-        & suscov,transcov,susparop(1,:),powersusparop(1,:),&
-        & transparop(1,:),powertransparop(1,:),kernelparop(1,:),sparkop(1,1),loglik(1,1))
+    if (anum2(1) .eq. 1) then
+
+        infdens = 0.0_C_DOUBLE
+        do i = 1, ni
+            if (i .gt. obs_inf_time) then
+                infdens = infdens + gammadensity(epidat3(i, 3), delta1op(1, 1), delta2op(1, 1))
+            else
+                infdens = infdens
+            end if
+        end do
+
+        call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3, &
+        & suscov, transcov, susparop(1, :), powersusparop(1, :), &
+        & transparop(1, :), powertransparop(1, :), kernelparop(1, :), sparkop(1, 1), loglik66)
+
+        loglik(1, 1) = loglik66 + infdens
+
+    else if (anum2(1) .eq. 2) then
+
+        call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3, &
+        & suscov, transcov, susparop(1, :), powersusparop(1, :), &
+        & transparop(1, :), powertransparop(1, :), kernelparop(1, :), sparkop(1, 1), loglik66)
+
+        loglik(1, 1) = loglik66
+
+    end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -214,9 +242,9 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        do j = 1 , (nsim-1)
+        do j = 1, (nsim-1)
 
-            if(anum2(1) .eq. 1)then
+            if (anum2(1) .eq. 1) then
 ! if the infection times and infectious periods are assumed unknown:
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -225,9 +253,9 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-                delta1op(j+1,1) = delta1op(j,1)
-                delta2op(j+1,1) = randgamma(((dble(ni)*delta1op(j+1,1))+delta2prior(1)),&
-                & 1.0_c_double/(delta2prior(2)+sum(epidat3(1:ni,3))))
+                delta1op(j+1, 1) = delta1op(j, 1)
+                delta2op(j+1, 1) = randgamma(((dble(ni)*delta1op(j+1, 1))+delta2prior(1)), &
+                & 1.0_c_double/(delta2prior(2)+sum(epidat3(1:ni, 3))))
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -235,10 +263,16 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+                if (infperiodproposal(1) .eq. 0.0d0) then
+                    infperiodproposal1 = (/ delta1op(j+1, 1), delta2op(j+1, 1) /)
+                else
+                    infperiodproposal1 = infperiodproposal
+                end if
+
 
                 nblock = floor(real(ni-obs_inf_time)/real(sizeblock))
 
-                it = (/(r,r = 1 ,ni)/)
+                it = (/(r, r = 1, ni)/)
 
                 xxindic = 0
                 xxindic(1:obs_inf_time) = 1
@@ -249,53 +283,53 @@ contains
 ! if the sizeblock has a value greater than 1, then update infection times/infectious periods
 ! in blocks with assigning those in each block randomly at each iteration.
 
-                allocate(amcmc(sizeblock,nblock))
+                allocate(amcmc(sizeblock, nblock))
                 allocate(amcmc1((ni-obs_inf_time)-(sizeblock*nblock)))
 
                 amcmc  = 0
                 amcmc1 = 0
 
-                do r = 1 , nblock
-                    call RANSAMsir(pack(it,(xxindic .ne. 1)),amcmc(:,r),count(xxindic .ne. 1),sizeblock)
-                    xxindic(amcmc(:,r)) = 1
+                do r = 1, nblock
+                    call RANSAMsir(pack(it, (xxindic .ne. 1)), amcmc(:, r), count(xxindic .ne. 1), sizeblock)
+                    xxindic(amcmc(:, r)) = 1
                 end do
 
-                amcmc1 = pack(it,(xxindic .ne. 1))
+                amcmc1 = pack(it, (xxindic .ne. 1))
 
                 mn = (ni-obs_inf_time)-(sizeblock*nblock)
 
 
-                do r = 1,(nblock)
+                do r = 1, (nblock)
 
-                    do m = 1 , sizeblock
-                        epidat3update(amcmc(m,r),3)  = randgamma(infperiodproposal(1),1.0_c_double/infperiodproposal(2))
-                        epidat3update(amcmc(m,r),4)  = epidat3update(amcmc(m,r),2) - epidat3update(amcmc(m,r),3)
+                    do m = 1, sizeblock
+                        epidat3update(amcmc(m, r), 3)  = randgamma(infperiodproposal1(1), 1.0_c_double/infperiodproposal1(2))
+                        epidat3update(amcmc(m, r), 4)  = epidat3update(amcmc(m, r), 2) - epidat3update(amcmc(m, r), 3)
                     end do
 
 ! calculate the log-likelihood function:
 
-                    call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3update,&
-                        & suscov,transcov,susparop(j,:),powersusparop(j,:),&
-                        & transparop(j,:),powertransparop(j,:),kernelparop(j,:),sparkop(j,1),valueupdate1)
+                    call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3update, &
+                        & suscov, transcov, susparop(j, :), powersusparop(j, :), &
+                        & transparop(j, :), powertransparop(j, :), kernelparop(j, :), sparkop(j, 1), valueupdate1)
 
-                    call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3current,&
-                        & suscov,transcov,susparop(j,:),powersusparop(j,:),&
-                        & transparop(j,:),powertransparop(j,:),kernelparop(j,:),sparkop(j,1),valuecurrent1)
+                    call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3current, &
+                        & suscov, transcov, susparop(j, :), powersusparop(j, :), &
+                        & transparop(j, :), powertransparop(j, :), kernelparop(j, :), sparkop(j, 1), valuecurrent1)
 
                     denupdate      = 0.0_c_double
                     dencurrent     = 0.0_c_double
                     valuefupdate1  = 0.0_c_double
                     valuefcurrent1 = 0.0_c_double
 
-                    do m = 1 , sizeblock
+                    do m = 1, sizeblock
                         denupdate      = denupdate     + &
-                        & gammadensity(epidat3update(amcmc(m,r),3),delta1op(j+1,1),delta2op(j+1,1))
+                        & gammadensity(epidat3update(amcmc(m, r), 3), delta1op(j+1, 1), delta2op(j+1, 1))
                         dencurrent     = dencurrent    + &
-                        & gammadensity(epidat3current(amcmc(m,r),3),delta1op(j+1,1),delta2op(j+1,1))
+                        & gammadensity(epidat3current(amcmc(m, r), 3), delta1op(j+1, 1), delta2op(j+1, 1))
                         valuefupdate1  = valuefupdate1 + &
-                        & gammadensity(epidat3update(amcmc(m,r),3),infperiodproposal(1),infperiodproposal(2))
+                        & gammadensity(epidat3update(amcmc(m, r), 3), infperiodproposal1(1), infperiodproposal1(2))
                         valuefcurrent1 = valuefcurrent1+ &
-                        & gammadensity(epidat3current(amcmc(m,r),3),infperiodproposal(1),infperiodproposal(2))
+                        & gammadensity(epidat3current(amcmc(m, r), 3), infperiodproposal1(1), infperiodproposal1(2))
                     end do
 
                     valueffupdate  = valueupdate1  + denupdate 
@@ -304,53 +338,53 @@ contains
 !calculating the log acceptance ratio:
                     ratio1    = (valueffupdate+valuefcurrent1)-(valueffcurrent+valuefupdate1)
 
-                    psi1      = min(1.0_c_double,dexp(ratio1))
+                    psi1      = min(1.0_c_double, dexp(ratio1))
 
 ! decision: accept/reject the proposed value:
                     call random_number(u1)
 
-                    if ( (u1 .le. psi1) .and. (any(epidat3update(amcmc(:,r),4) .lt. &
-                    & epidat3current(obs_inf_time,4)).eqv. .false.) ) then
-                        epidat3current(amcmc(:,r),3) = epidat3update(amcmc(:,r),3)
-                        epidat3current(amcmc(:,r),4) = epidat3update(amcmc(:,r),4)
+                    if ( (u1 .le. psi1) .and. (any(epidat3update(amcmc(:, r), 4) .lt. &
+                    & epidat3current(obs_inf_time, 4)).eqv. .false.) ) then
+                        epidat3current(amcmc(:, r), 3) = epidat3update(amcmc(:, r), 3)
+                        epidat3current(amcmc(:, r), 4) = epidat3update(amcmc(:, r), 4)
                     else
-                        epidat3update(amcmc(:,r),3) = epidat3current(amcmc(:,r),3)
-                        epidat3update(amcmc(:,r),4) = epidat3current(amcmc(:,r),4)
+                        epidat3update(amcmc(:, r), 3) = epidat3current(amcmc(:, r), 3)
+                        epidat3update(amcmc(:, r), 4) = epidat3current(amcmc(:, r), 4)
                     end if
 
                 end do
 
 ! in case the last block has less number of infection times than the sizeblock:
 
-                if(mn .ne. 0)then
+                if (mn .ne. 0) then
 
-                    do m = 1 , mn
-                        epidat3update(amcmc1(m),3)  = randgamma(infperiodproposal(1),1.0_c_double/infperiodproposal(2))
-                        epidat3update(amcmc1(m),4)  = epidat3update(amcmc1(m),2)- epidat3update(amcmc1(m),3)
+                    do m = 1, mn
+                        epidat3update(amcmc1(m), 3)  = randgamma(infperiodproposal1(1), 1.0_c_double/infperiodproposal1(2))
+                        epidat3update(amcmc1(m), 4)  = epidat3update(amcmc1(m), 2)- epidat3update(amcmc1(m), 3)
                     end do
 
-                    call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3update,&
-                        & suscov,transcov,susparop(j,:),powersusparop(j,:),&
-                        & transparop(j,:),powertransparop(j,:),kernelparop(j,:),sparkop(j,1),valueupdate1)
+                    call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3update, &
+                        & suscov, transcov, susparop(j, :), powersusparop(j, :), &
+                        & transparop(j, :), powertransparop(j, :), kernelparop(j, :), sparkop(j, 1), valueupdate1)
 
-                    call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3current,&
-                        & suscov,transcov,susparop(j,:),powersusparop(j,:),&
-                        & transparop(j,:),powertransparop(j,:),kernelparop(j,:),sparkop(j,1),valuecurrent1)
+                    call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3current, &
+                        & suscov, transcov, susparop(j, :), powersusparop(j, :), &
+                        & transparop(j, :), powertransparop(j, :), kernelparop(j, :), sparkop(j, 1), valuecurrent1)
 
                     denupdate      = 0.0_c_double
                     dencurrent     = 0.0_c_double
                     valuefupdate1  = 0.0_c_double
                     valuefcurrent1 = 0.0_c_double
 
-                    do m = 1 , mn
+                    do m = 1, mn
                         denupdate  = denupdate  + &
-                        & gammadensity(epidat3update(amcmc1(m),3),delta1op(j+1,1),delta2op(j+1,1))
+                        & gammadensity(epidat3update(amcmc1(m), 3), delta1op(j+1, 1), delta2op(j+1, 1))
                         dencurrent = dencurrent + &
-                        & gammadensity(epidat3current(amcmc1(m),3),delta1op(j+1,1),delta2op(j+1,1))
+                        & gammadensity(epidat3current(amcmc1(m), 3), delta1op(j+1, 1), delta2op(j+1, 1))
                         valuefupdate1  = valuefupdate1 + &
-                        & gammadensity(epidat3update(amcmc1(m),3),infperiodproposal(1),infperiodproposal(2))
+                        & gammadensity(epidat3update(amcmc1(m), 3), infperiodproposal1(1), infperiodproposal1(2))
                         valuefcurrent1 = valuefcurrent1+ &
-                        & gammadensity(epidat3current(amcmc1(m),3),infperiodproposal(1),infperiodproposal(2))
+                        & gammadensity(epidat3current(amcmc1(m), 3), infperiodproposal1(1), infperiodproposal1(2))
                     end do
 
                     valueffupdate  = valueupdate1  + denupdate 
@@ -359,18 +393,18 @@ contains
 !calculating the log acceptance ratio:
                     ratio1    = (valueffupdate+valuefcurrent1)-(valueffcurrent+valuefupdate1)
 
-                    psi1      = min(1.0_c_double,dexp(ratio1))
+                    psi1      = min(1.0_c_double, dexp(ratio1))
 
 ! decision: accept/reject the proposed value:
                     call random_number(u1)
 
-                    if ( (u1 .le. psi1) .and. (any(epidat3update(amcmc1,4) .lt. &
-                    & epidat3current(obs_inf_time,4)).eqv. .false.) ) then
-                        epidat3current(amcmc1(1:mn),3) = epidat3update(amcmc1(1:mn),3)
-                        epidat3current(amcmc1(1:mn),4) = epidat3update(amcmc1(1:mn),4)
+                    if ( (u1 .le. psi1) .and. (any(epidat3update(amcmc1, 4) .lt. &
+                    & epidat3current(obs_inf_time, 4)).eqv. .false.) ) then
+                        epidat3current(amcmc1(1:mn), 3) = epidat3update(amcmc1(1:mn), 3)
+                        epidat3current(amcmc1(1:mn), 4) = epidat3update(amcmc1(1:mn), 4)
                     else
-                        epidat3update(amcmc1(1:mn),3) = epidat3current(amcmc1(1:mn),3)
-                        epidat3update(amcmc1(1:mn),4) = epidat3current(amcmc1(1:mn),4)
+                        epidat3update(amcmc1(1:mn), 3) = epidat3current(amcmc1(1:mn), 3)
+                        epidat3update(amcmc1(1:mn), 4) = epidat3current(amcmc1(1:mn), 4)
                     end if
 
                 end if
@@ -380,19 +414,19 @@ contains
 
                 epidat3 = epidat3current
 
-                epidatmcper(j+1,1:n) = (/epidat3(1:n,3)/)
-                epidatmctim(j+1,1:n) = (/epidat3(1:n,4)/)
-                epidatmcrem(j+1,1:n) = (/epidat3(1:n,2)/)
+                epidatmcper(j+1, 1:n) = (/epidat3(1:n, 3)/)
+                epidatmctim(j+1, 1:n) = (/epidat3(1:n, 4)/)
+                epidatmcrem(j+1, 1:n) = (/epidat3(1:n, 2)/)
 
 ! if the infection times/infectious period are assumed known:
 
-            else if(anum2(1) .eq. 2)then
-                delta1op(j+1,1) = delta1
-                delta2op(j+1,1) = delta2
+            else if (anum2(1) .eq. 2) then
+                delta1op(j+1, 1) = delta1(1)
+                delta2op(j+1, 1) = delta1(2)
                 epidat3 = epidat
-                epidatmcper(j+1,1:n) = (/epidat3(:,3)/)
-                epidatmctim(j+1,1:n) = (/epidat3(:,4)/)
-                epidatmcrem(j+1,1:n) = (/epidat3(:,2)/)
+                epidatmcper(j+1, 1:n) = (/epidat3(:, 3)/)
+                epidatmctim(j+1, 1:n) = (/epidat3(:, 4)/)
+                epidatmcrem(j+1, 1:n) = (/epidat3(:, 2)/)
             end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -401,19 +435,19 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-            if(anum2(2) .eq. 1)then
+            if (anum2(2) .eq. 1) then
 
-                postparsusupdate    = susparop(j,:)
-                postparsuscurrent   = susparop(j,:)
+                postparsusupdate    = susparop(j, :)
+                postparsuscurrent   = susparop(j, :)
 
-                do r = 1 , nsuspar
+                do r = 1, nsuspar
 
 ! proposing candidate and making sure is positive:
                     zparsus = 0.0_c_double
                     abs32 = 0
                     do while(abs32 .eq. 0)
-                        zparsus = randnormal(postparsuscurrent(r),susproposalvar(r))
-                        if(zparsus .gt. 0.0_c_double)then
+                        zparsus = randnormal(postparsuscurrent(r), susproposalvar(r))
+                        if (zparsus .gt. 0.0_c_double) then
                             abs32 = 1
                         else
                             abs32 = 0
@@ -424,37 +458,37 @@ contains
 
 !calculating the log-likelihood function:
 
-                    call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3,&
-                        & suscov,transcov, (/postparsusupdate/) ,powersusparop(j,:),&
-                        & (/transparop(j,:)/),powertransparop(j,:),kernelparop(j,:),sparkop(j,1),valueupdate2)
+                    call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3, &
+                        & suscov, transcov, (/postparsusupdate/), powersusparop(j, :), &
+                        & (/transparop(j, :)/), powertransparop(j, :), kernelparop(j, :), sparkop(j, 1), valueupdate2)
 
-                    call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3,&
-                        & suscov,transcov, (/postparsuscurrent/) ,powersusparop(j,:),&
-                        & (/transparop(j,:)/) ,powertransparop(j,:),kernelparop(j,:),sparkop(j,1),valuecurrent2)
+                    call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3, &
+                        & suscov, transcov, (/postparsuscurrent/), powersusparop(j, :), &
+                        & (/transparop(j, :)/), powertransparop(j, :), kernelparop(j, :), sparkop(j, 1), valuecurrent2)
 
 !calculating the log-prior:
 
-                    if(priordistsuspar(r) .eq. 1)then
-                        valuefupdate2    = gammadensity(postparsusupdate(r),&
-                        & priorpar1sus(r),priorpar2sus(r))
-                        valuefcurrent2   = gammadensity(postparsuscurrent(r),&
-                        & priorpar1sus(r),priorpar2sus(r))
-                    else if(priordistsuspar(r) .eq. 2)then
-                        valuefupdate2    = halfnormalden(postparsusupdate(r),&
-                        & priorpar1sus(r),priorpar2sus(r))
-                        valuefcurrent2   = halfnormalden(postparsuscurrent(r),&
-                        & priorpar1sus(r),priorpar2sus(r))
-                    else if(priordistsuspar(r) .eq. 3)then
-                        valuefupdate2    = uniformden(postparsusupdate(r),&
-                        & priorpar1sus(r),priorpar2sus(r))
-                        valuefcurrent2   = uniformden(postparsuscurrent(r),&
-                        & priorpar1sus(r),priorpar2sus(r))
+                    if (priordistsuspar(r) .eq. 1) then
+                        valuefupdate2    = gammadensity(postparsusupdate(r), &
+                        & priorpar1sus(r), priorpar2sus(r))
+                        valuefcurrent2   = gammadensity(postparsuscurrent(r), &
+                        & priorpar1sus(r), priorpar2sus(r))
+                    else if (priordistsuspar(r) .eq. 2) then
+                        valuefupdate2    = halfnormalden(postparsusupdate(r), &
+                        & priorpar1sus(r), priorpar2sus(r))
+                        valuefcurrent2   = halfnormalden(postparsuscurrent(r), &
+                        & priorpar1sus(r), priorpar2sus(r))
+                    else if (priordistsuspar(r) .eq. 3) then
+                        valuefupdate2    = uniformden(postparsusupdate(r), &
+                        & priorpar1sus(r), priorpar2sus(r))
+                        valuefcurrent2   = uniformden(postparsuscurrent(r), &
+                        & priorpar1sus(r), priorpar2sus(r))
                     end if
 
 !calculating the log acceptance ratio:
                     ratio2 = (valueupdate2 + valuefupdate2) - (valuecurrent2 + valuefcurrent2)
 
-                    psi2 = min(1.0_c_double,dexp(ratio2))
+                    psi2 = min(1.0_c_double, dexp(ratio2))
 
 ! decision: accept/reject the proposed value:
 
@@ -469,12 +503,12 @@ contains
                     end if
 
                 end do   !  end loop r nparsus
-                susparop(j+1,:)  = postparsuscurrent
+                susparop(j+1, :)  = postparsuscurrent
 
 ! if it is not included in the model:
 
             else
-                susparop(j+1,1:nsuspar)  = susparop(j,1:nsuspar)
+                susparop(j+1, 1:nsuspar)  = susparop(j, 1:nsuspar)
             end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -483,19 +517,19 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-            if(anum2(6) .eq. 1)then
+            if (anum2(6) .eq. 1) then
 
-                postparsusupdate    = powersusparop(j,:)
-                postparsuscurrent   = powersusparop(j,:)
+                postparsusupdate    = powersusparop(j, :)
+                postparsuscurrent   = powersusparop(j, :)
 
-                do r = 1 , nsuspar
+                do r = 1, nsuspar
 
 ! proposing candidate and making sure is positive:
                     zparsus = 0.0_c_double
                     abs32 = 0
                     do while(abs32 .eq. 0)
-                        zparsus = randnormal(postparsuscurrent(r),powersusproposalvar(r))
-                        if(zparsus .gt. 0.0_c_double)then
+                        zparsus = randnormal(postparsuscurrent(r), powersusproposalvar(r))
+                        if (zparsus .gt. 0.0_c_double) then
                             abs32 = 1
                         else
                             abs32 = 0
@@ -506,37 +540,37 @@ contains
 
 !calculating the log-likelihood function:
 
-                    call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3,&
-                        & suscov,transcov, susparop(j+1,:),(/postparsusupdate/),&
-                        & (/transparop(j,:)/),powertransparop(j,:),kernelparop(j,:),sparkop(j,1),valueupdate2)
+                    call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3, &
+                        & suscov, transcov, susparop(j+1, :), (/postparsusupdate/), &
+                        & (/transparop(j, :)/), powertransparop(j, :), kernelparop(j, :), sparkop(j, 1), valueupdate2)
 
-                    call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3,&
-                        & suscov,transcov, susparop(j+1,:),(/postparsuscurrent/),&
-                        & (/transparop(j,:)/) ,powertransparop(j,:),kernelparop(j,:),sparkop(j,1),valuecurrent2)
+                    call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3, &
+                        & suscov, transcov, susparop(j+1, :), (/postparsuscurrent/), &
+                        & (/transparop(j, :)/), powertransparop(j, :), kernelparop(j, :), sparkop(j, 1), valuecurrent2)
 
 !calculating the log-prior:
 
-                    if(priordistpowersus(r) .eq. 1)then
-                        valuefupdate2    = gammadensity(postparsusupdate(r),&
-                        & priorpar1powersus(r),priorpar2powersus(r))
-                        valuefcurrent2   = gammadensity(postparsuscurrent(r),&
-                        & priorpar1powersus(r),priorpar2powersus(r))
-                    else if(priordistpowersus(r) .eq. 2)then
-                        valuefupdate2    = halfnormalden(postparsusupdate(r),&
-                        & priorpar1powersus(r),priorpar2powersus(r))
-                        valuefcurrent2   = halfnormalden(postparsuscurrent(r),&
-                        & priorpar1powersus(r),priorpar2powersus(r))
-                    else if(priordistpowersus(r) .eq. 3)then
-                        valuefupdate2    = uniformden(postparsusupdate(r),&
-                        & priorpar1powersus(r),priorpar2powersus(r))
-                        valuefcurrent2   = uniformden(postparsuscurrent(r),&
-                        & priorpar1powersus(r),priorpar2powersus(r))
+                    if (priordistpowersus(r) .eq. 1) then
+                        valuefupdate2    = gammadensity(postparsusupdate(r), &
+                        & priorpar1powersus(r), priorpar2powersus(r))
+                        valuefcurrent2   = gammadensity(postparsuscurrent(r), &
+                        & priorpar1powersus(r), priorpar2powersus(r))
+                    else if (priordistpowersus(r) .eq. 2) then
+                        valuefupdate2    = halfnormalden(postparsusupdate(r), &
+                        & priorpar1powersus(r), priorpar2powersus(r))
+                        valuefcurrent2   = halfnormalden(postparsuscurrent(r), &
+                        & priorpar1powersus(r), priorpar2powersus(r))
+                    else if (priordistpowersus(r) .eq. 3) then
+                        valuefupdate2    = uniformden(postparsusupdate(r), &
+                        & priorpar1powersus(r), priorpar2powersus(r))
+                        valuefcurrent2   = uniformden(postparsuscurrent(r), &
+                        & priorpar1powersus(r), priorpar2powersus(r))
                     end if
 
 !calculating the log acceptance ratio:
                     ratio2 = (valueupdate2 + valuefupdate2) - (valuecurrent2 + valuefcurrent2)
 
-                    psi2 = min(1.0_c_double,dexp(ratio2))
+                    psi2 = min(1.0_c_double, dexp(ratio2))
 
 ! decision: accept/reject the proposed value:
 
@@ -551,11 +585,11 @@ contains
                     end if
 
                 end do   !  end loop r nparsus
-                powersusparop(j+1,:)  = postparsuscurrent
+                powersusparop(j+1, :)  = postparsuscurrent
 
 ! if it is not included in the model:
             else
-                powersusparop(j+1,1:nsuspar)  = powersusparop(j,1:nsuspar)
+                powersusparop(j+1, 1:nsuspar)  = powersusparop(j, 1:nsuspar)
             end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -564,12 +598,12 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-            if(anum2(3) .eq. 1)then
+            if (anum2(3) .eq. 1) then
 
-            postpartransupdate    = transparop(j,:)
-            postpartranscurrent   = transparop(j,:)
+            postpartransupdate    = transparop(j, :)
+            postpartranscurrent   = transparop(j, :)
 
-            do r = 1 , ntranspar
+            do r = 1, ntranspar
 
 ! proposing candidate:
                 zpartrans = 0.0_c_double
@@ -577,8 +611,8 @@ contains
                 abs33 = 0
 
                 do while(abs33 .eq. 0)
-                    zpartrans = randnormal(postpartranscurrent(r),transproposalvar(r))
-                    if(zpartrans .gt. 0.0_c_double)then
+                    zpartrans = randnormal(postpartranscurrent(r), transproposalvar(r))
+                    if (zpartrans .gt. 0.0_c_double) then
                         abs33 = 1
                     else
                         abs33 = 0
@@ -589,37 +623,37 @@ contains
 
 !calculating the log-likelihoodSIR:
 
-                call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3,&
-                    & suscov,transcov,susparop(j+1,:),powersusparop(j+1,:),&
-                    & (/ postpartransupdate /),powertransparop(j,:),kernelparop(j,:),sparkop(j,1),valueupdate3)
+                call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3, &
+                    & suscov, transcov, susparop(j+1, :), powersusparop(j+1, :), &
+                    & (/ postpartransupdate /), powertransparop(j, :), kernelparop(j, :), sparkop(j, 1), valueupdate3)
 
-                call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3,&
-                    & suscov,transcov,susparop(j+1,:),powersusparop(j+1,:),&
-                    & (/ postpartranscurrent /),powertransparop(j,:),kernelparop(j,:),sparkop(j,1),valuecurrent3)
+                call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3, &
+                    & suscov, transcov, susparop(j+1, :), powersusparop(j+1, :), &
+                    & (/ postpartranscurrent /), powertransparop(j, :), kernelparop(j, :), sparkop(j, 1), valuecurrent3)
 
 !calculating the log-prior:
 
-                if(priordisttranspar(r) .eq. 1)then
-                    valuefupdate3    = gammadensity(postpartransupdate(r),&
-                    & priorpar1trans(r),priorpar2trans(r))
-                    valuefcurrent3   = gammadensity(postpartranscurrent(r),&
-                    & priorpar1trans(r),priorpar2trans(r))
-                else if(priordisttranspar(r) .eq. 2)then
-                    valuefupdate3    = halfnormalden(postpartransupdate(r),&
-                    & priorpar1trans(r),priorpar2trans(r))
-                    valuefcurrent3   = halfnormalden(postpartranscurrent(r),&
-                    & priorpar1trans(r),priorpar2trans(r))
+                if (priordisttranspar(r) .eq. 1) then
+                    valuefupdate3    = gammadensity(postpartransupdate(r), &
+                    & priorpar1trans(r), priorpar2trans(r))
+                    valuefcurrent3   = gammadensity(postpartranscurrent(r), &
+                    & priorpar1trans(r), priorpar2trans(r))
+                else if (priordisttranspar(r) .eq. 2) then
+                    valuefupdate3    = halfnormalden(postpartransupdate(r), &
+                    & priorpar1trans(r), priorpar2trans(r))
+                    valuefcurrent3   = halfnormalden(postpartranscurrent(r), &
+                    & priorpar1trans(r), priorpar2trans(r))
                 else
-                    valuefupdate3    = uniformden(postpartransupdate(r),&
-                    & priorpar1trans(r),priorpar2trans(r))
-                    valuefcurrent3   = uniformden(postpartranscurrent(r),&
-                    & priorpar1trans(r),priorpar2trans(r))
+                    valuefupdate3    = uniformden(postpartransupdate(r), &
+                    & priorpar1trans(r), priorpar2trans(r))
+                    valuefcurrent3   = uniformden(postpartranscurrent(r), &
+                    & priorpar1trans(r), priorpar2trans(r))
                 end if
 
 !calculating the log acceptance ratio:
                 ratio3 = (valueupdate3 + valuefupdate3) - (valuecurrent3 + valuefcurrent3)
 
-                psi3 = min(1.0_c_double,dexp(ratio3))
+                psi3 = min(1.0_c_double, dexp(ratio3))
 
 ! decision: accept/reject the proposed value:
 
@@ -635,11 +669,11 @@ contains
 
             end do   !  end loop r nparsus
 
-            transparop(j+1,:)        = postpartransupdate
+            transparop(j+1, :)        = postpartransupdate
 
 ! if it is not included in the model:
             else
-                transparop(j+1,1:ntranspar)        = transparop(j,1:ntranspar)
+                transparop(j+1, 1:ntranspar)        = transparop(j, 1:ntranspar)
             end if
 
 
@@ -649,12 +683,12 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-            if(anum2(7) .eq. 1)then
+            if (anum2(7) .eq. 1) then
 
-            postpartransupdate    = powertransparop(j,:)
-            postpartranscurrent   = powertransparop(j,:)
+            postpartransupdate    = powertransparop(j, :)
+            postpartranscurrent   = powertransparop(j, :)
 
-            do r = 1 , ntranspar
+            do r = 1, ntranspar
 
 ! proposing candidate:
                 zpartrans = 0.0_c_double
@@ -662,8 +696,8 @@ contains
                 abs33 = 0
 
                 do while(abs33 .eq. 0)
-                    zpartrans = randnormal(postpartranscurrent(r),powertransproposalvar(r))
-                    if(zpartrans .gt. 0.0_c_double)then
+                    zpartrans = randnormal(postpartranscurrent(r), powertransproposalvar(r))
+                    if (zpartrans .gt. 0.0_c_double) then
                         abs33 = 1
                     else
                         abs33 = 0
@@ -674,37 +708,37 @@ contains
 
 !calculating the log-likelihoodSIR:
 
-                call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3,&
-                    & suscov,transcov,susparop(j+1,:),powersusparop(j+1,:),&
-                    & transparop(j+1,:),(/ postpartransupdate /),kernelparop(j,:),sparkop(j,1),valueupdate3)
+                call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3, &
+                    & suscov, transcov, susparop(j+1, :), powersusparop(j+1, :), &
+                    & transparop(j+1, :), (/ postpartransupdate /), kernelparop(j, :), sparkop(j, 1), valueupdate3)
 
-                call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3,&
-                    & suscov,transcov,susparop(j+1,:),powersusparop(j+1,:),&
-                    & transparop(j+1,:),(/ postpartranscurrent /),kernelparop(j,:),sparkop(j,1),valuecurrent3)
+                call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3, &
+                    & suscov, transcov, susparop(j+1, :), powersusparop(j+1, :), &
+                    & transparop(j+1, :), (/ postpartranscurrent /), kernelparop(j, :), sparkop(j, 1), valuecurrent3)
 
 !calculating the log-prior:
 
-                if(priordistpowertrans(r) .eq. 1)then
-                    valuefupdate3    = gammadensity(postpartransupdate(r),&
-                    & priorpar1powertrans(r),priorpar2powertrans(r))
-                    valuefcurrent3   = gammadensity(postpartranscurrent(r),&
-                    & priorpar1powertrans(r),priorpar2powertrans(r))
-                else if(priordistpowertrans(r) .eq. 2)then
-                    valuefupdate3    = halfnormalden(postpartransupdate(r),&
-                    & priorpar1powertrans(r),priorpar2powertrans(r))
-                    valuefcurrent3   = halfnormalden(postpartranscurrent(r),&
-                    & priorpar1powertrans(r),priorpar2powertrans(r))
-                else if(priordistpowertrans(r) .eq. 3)then
-                    valuefupdate3    = uniformden(postpartransupdate(r),&
-                    & priorpar1powertrans(r),priorpar2powertrans(r))
-                    valuefcurrent3   = uniformden(postpartranscurrent(r),&
-                    & priorpar1powertrans(r),priorpar2powertrans(r))
+                if (priordistpowertrans(r) .eq. 1) then
+                    valuefupdate3    = gammadensity(postpartransupdate(r), &
+                    & priorpar1powertrans(r), priorpar2powertrans(r))
+                    valuefcurrent3   = gammadensity(postpartranscurrent(r), &
+                    & priorpar1powertrans(r), priorpar2powertrans(r))
+                else if (priordistpowertrans(r) .eq. 2) then
+                    valuefupdate3    = halfnormalden(postpartransupdate(r), &
+                    & priorpar1powertrans(r), priorpar2powertrans(r))
+                    valuefcurrent3   = halfnormalden(postpartranscurrent(r), &
+                    & priorpar1powertrans(r), priorpar2powertrans(r))
+                else if (priordistpowertrans(r) .eq. 3) then
+                    valuefupdate3    = uniformden(postpartransupdate(r), &
+                    & priorpar1powertrans(r), priorpar2powertrans(r))
+                    valuefcurrent3   = uniformden(postpartranscurrent(r), &
+                    & priorpar1powertrans(r), priorpar2powertrans(r))
                 end if
 
 !calculating the log acceptance ratio:
                 ratio3 = (valueupdate3 + valuefupdate3) - (valuecurrent3 + valuefcurrent3)
 
-                psi3 = min(1.0_c_double,dexp(ratio3))
+                psi3 = min(1.0_c_double, dexp(ratio3))
 
 ! decision: accept/reject the proposed value:
 
@@ -720,11 +754,11 @@ contains
 
             end do   !  end loop r nparsus
 
-            powertransparop(j+1,:)        = postpartransupdate
+            powertransparop(j+1, :)        = postpartransupdate
 
 ! if it is not included in the model:
             else
-                powertransparop(j+1,1:ntranspar)        = powertransparop(j,1:ntranspar)
+                powertransparop(j+1, 1:ntranspar)        = powertransparop(j, 1:ntranspar)
             end if
 
 
@@ -734,13 +768,13 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-            if(anum2(4) .eq. 1)then
+            if (anum2(4) .eq. 1) then
 
                 abs34 = 0
 
                 do while(abs34 .eq. 0)
-                    zspark = randnormal(sparkop(j,1),sparkproposalvar)
-                    if(zspark .gt. 0.0_c_double)then
+                    zspark = randnormal(sparkop(j, 1), sparkproposalvar)
+                    if (zspark .gt. 0.0_c_double) then
                         abs34 = 1
                     else
                         abs34 = 0
@@ -749,50 +783,50 @@ contains
 
                 postsparkupdate = zspark
 
-                call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3,&
-                    & suscov,transcov,susparop(j+1,:),powersusparop(j+1,:),&
-                    & transparop(j+1,:),powertransparop(j+1,:),kernelparop(j,:),postsparkupdate,valueupdate4)
+                call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3, &
+                    & suscov, transcov, susparop(j+1, :), powersusparop(j+1, :), &
+                    & transparop(j+1, :), powertransparop(j+1, :), kernelparop(j, :), postsparkupdate, valueupdate4)
 
-                call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3,&
-                    & suscov,transcov,susparop(j+1,:),powersusparop(j+1,:),&
-                    & transparop(j+1,:),powertransparop(j+1,:),kernelparop(j,:),sparkop(j,1),valuecurrent4)
+                call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3, &
+                    & suscov, transcov, susparop(j+1, :), powersusparop(j+1, :), &
+                    & transparop(j+1, :), powertransparop(j+1, :), kernelparop(j, :), sparkop(j, 1), valuecurrent4)
 
 !calculating the log-prior:
-                if(priordistsparkpar .eq. 1)then
-                    valuefupdate4    = gammadensity(postsparkupdate,&
-                    & sparkprior(1),sparkprior(2))
-                    valuefcurrent4   = gammadensity(sparkop(j,1),&
-                    & sparkprior(1),sparkprior(2))
-                else if(priordistsparkpar .eq. 2)then
-                    valuefupdate4    = halfnormalden(postsparkupdate,&
-                    & sparkprior(1),sparkprior(2))
-                    valuefcurrent4   = halfnormalden(sparkop(j,1),&
-                    & sparkprior(1),sparkprior(2))
+                if (priordistsparkpar .eq. 1) then
+                    valuefupdate4    = gammadensity(postsparkupdate, &
+                    & sparkprior(1), sparkprior(2))
+                    valuefcurrent4   = gammadensity(sparkop(j, 1), &
+                    & sparkprior(1), sparkprior(2))
+                else if (priordistsparkpar .eq. 2) then
+                    valuefupdate4    = halfnormalden(postsparkupdate, &
+                    & sparkprior(1), sparkprior(2))
+                    valuefcurrent4   = halfnormalden(sparkop(j, 1), &
+                    & sparkprior(1), sparkprior(2))
                 else
-                    valuefupdate4    = uniformden(postsparkupdate,&
-                    & sparkprior(1),sparkprior(2))
-                    valuefcurrent4   = uniformden(sparkop(j,1),&
-                    & sparkprior(1),sparkprior(2))
+                    valuefupdate4    = uniformden(postsparkupdate, &
+                    & sparkprior(1), sparkprior(2))
+                    valuefcurrent4   = uniformden(sparkop(j, 1), &
+                    & sparkprior(1), sparkprior(2))
                 end if
 
 !calculating the log acceptance ratio:
                 ratio4 = (valueupdate4 + valuefupdate4)-(valuecurrent4 + valuefcurrent4)
 
-                psi4 = min(1.0_c_double,dexp(ratio4))
+                psi4 = min(1.0_c_double, dexp(ratio4))
 
                 ! decision: accept/reject the proposed value:
 
                 call random_number(u4)
 
                 if (psi4 .ge. u4) then
-                    sparkop(j+1,1) = postsparkupdate
+                    sparkop(j+1, 1) = postsparkupdate
                 else
-                    sparkop(j+1,1) = sparkop(j,1)
+                    sparkop(j+1, 1) = sparkop(j, 1)
                 end if
 
                 ! if it is not included in the model:
             else
-                sparkop(j+1,1) = sparkop(j,1)
+                sparkop(j+1, 1) = sparkop(j, 1)
             end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -801,126 +835,126 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-            if(anum2(5) .eq. 1)then
+            if (anum2(5) .eq. 1) then
 ! for distance-based continuous-time ILMS:
 ! just the spatial parameter is needed to be updated
 
                 abs35 = 0
                 do while(abs35 .eq. 0)
-                    zkernelpar = randnormal(kernelparop(j,1),kernelparproposalvar(1))
-                    if(zkernelpar .gt. 0.0_c_double)then
+                    zkernelpar = randnormal(kernelparop(j, 1), kernelparproposalvar(1))
+                    if (zkernelpar .gt. 0.0_c_double) then
                         abs35 = 1
                     else
                         abs35 = 0
                     end if
                 end do        ! end while abs3
 
-                postkernelparupdate = (/ zkernelpar,kernelparop(j,2) /)
+                postkernelparupdate = (/ zkernelpar, kernelparop(j, 2) /)
 
 ! calculate the log-likelihood function:
-                call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3,&
-                    & suscov,transcov,susparop(j+1,:),powersusparop(j+1,:),&
-                    & transparop(j+1,:),powertransparop(j+1,:),postkernelparupdate,sparkop(j+1,1),valueupdate5)
+                call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3, &
+                    & suscov, transcov, susparop(j+1, :), powersusparop(j+1, :), &
+                    & transparop(j+1, :), powertransparop(j+1, :), postkernelparupdate, sparkop(j+1, 1), valueupdate5)
 
-                call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3,&
-                    & suscov,transcov,susparop(j+1,:),powersusparop(j+1,:),&
-                    & transparop(j+1,:),powertransparop(j+1,:),kernelparop(j,:),sparkop(j+1,1),valuecurrent5)
+                call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3, &
+                    & suscov, transcov, susparop(j+1, :), powersusparop(j+1, :), &
+                    & transparop(j+1, :), powertransparop(j+1, :), kernelparop(j, :), sparkop(j+1, 1), valuecurrent5)
 
 !calculating the log-prior:
-                if(priordistkernelparpar(1) .eq. 1)then
-                    valuefupdate5    = gammadensity(postkernelparupdate(1),&
-                    & kernelparprior(1,1),kernelparprior(1,2))
-                    valuefcurrent5   = gammadensity(kernelparop(j,1),&
-                    & kernelparprior(1,1),kernelparprior(1,2))
-                else if(priordistkernelparpar(1) .eq. 2)then
-                    valuefupdate5    = halfnormalden(postkernelparupdate(1),&
-                    & kernelparprior(1,1),kernelparprior(1,2))
-                    valuefcurrent5   = halfnormalden(kernelparop(j,1),&
-                    & kernelparprior(1,1),kernelparprior(1,2))
+                if (priordistkernelparpar(1) .eq. 1) then
+                    valuefupdate5    = gammadensity(postkernelparupdate(1), &
+                    & kernelparprior(1, 1), kernelparprior(1, 2))
+                    valuefcurrent5   = gammadensity(kernelparop(j, 1), &
+                    & kernelparprior(1, 1), kernelparprior(1, 2))
+                else if (priordistkernelparpar(1) .eq. 2) then
+                    valuefupdate5    = halfnormalden(postkernelparupdate(1), &
+                    & kernelparprior(1, 1), kernelparprior(1, 2))
+                    valuefcurrent5   = halfnormalden(kernelparop(j, 1), &
+                    & kernelparprior(1, 1), kernelparprior(1, 2))
                 else
-                    valuefupdate5    = uniformden(postkernelparupdate(1),&
-                    & kernelparprior(1,1),kernelparprior(1,2))
-                    valuefcurrent5   = uniformden(kernelparop(j,1),&
-                    & kernelparprior(1,1),kernelparprior(1,2))
+                    valuefupdate5    = uniformden(postkernelparupdate(1), &
+                    & kernelparprior(1, 1), kernelparprior(1, 2))
+                    valuefcurrent5   = uniformden(kernelparop(j, 1), &
+                    & kernelparprior(1, 1), kernelparprior(1, 2))
                 end if
 
 
 !calculating the log acceptance ratio:
                 ratio5 = (valueupdate5 + valuefupdate5)-(valuecurrent5 + valuefcurrent5)
 
-                psi5 = min(1.0_c_double,dexp(ratio5))
+                psi5 = min(1.0_c_double, dexp(ratio5))
 
 ! decision: accept/reject the proposed value:
 
                 call random_number(u5)
 
                 if (psi5 .ge. u5) then
-                    kernelparop(j+1,:) = postkernelparupdate
+                    kernelparop(j+1, :) = postkernelparupdate
                 else
-                    kernelparop(j+1,:) = kernelparop(j,:)
+                    kernelparop(j+1, :) = kernelparop(j, :)
                 end if
 
 
 
-            else if(anum2(5) .eq. 2)then
+            else if (anum2(5) .eq. 2) then
 ! for combined network- and distance-based continuous-time ILMS:
 
 ! updating the spatial parameter:
 
                 abs35 = 0
                 do while(abs35 .eq. 0)
-                    zkernelpar = randnormal(kernelparop(j,1),kernelparproposalvar(1))
-                    if(zkernelpar .gt. 0.0_c_double)then
+                    zkernelpar = randnormal(kernelparop(j, 1), kernelparproposalvar(1))
+                    if (zkernelpar .gt. 0.0_c_double) then
                         abs35 = 1
                     else
                         abs35 = 0
                     end if
                 end do        ! end while abs3
 
-                postkernelparupdate = (/ zkernelpar,kernelparop(j,2) /)
-                postkernelparcurrent = kernelparop(j,:)
+                postkernelparupdate = (/ zkernelpar, kernelparop(j, 2) /)
+                postkernelparcurrent = kernelparop(j, :)
 
 ! calculate the log-likelihood function:
-                call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3,&
-                    & suscov,transcov,susparop(j+1,:),powersusparop(j+1,:),&
-                    & transparop(j+1,:),powertransparop(j+1,:),postkernelparupdate,sparkop(j+1,1),valueupdate5)
+                call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3, &
+                    & suscov, transcov, susparop(j+1, :), powersusparop(j+1, :), &
+                    & transparop(j+1, :), powertransparop(j+1, :), postkernelparupdate, sparkop(j+1, 1), valueupdate5)
 
-                call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3,&
-                    & suscov,transcov,susparop(j+1,:),powersusparop(j+1,:),&
-                    & transparop(j+1,:),powertransparop(j+1,:),postkernelparcurrent,sparkop(j+1,1),valuecurrent5)
+                call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3, &
+                    & suscov, transcov, susparop(j+1, :), powersusparop(j+1, :), &
+                    & transparop(j+1, :), powertransparop(j+1, :), postkernelparcurrent, sparkop(j+1, 1), valuecurrent5)
 
 !calculating the log-prior:
-                if(priordistkernelparpar(1) .eq. 1)then
-                    valuefupdate5    = gammadensity(postkernelparupdate(1),&
-                    & kernelparprior(1,1),kernelparprior(1,2))
-                    valuefcurrent5   = gammadensity(kernelparop(j,1),&
-                    & kernelparprior(1,1),kernelparprior(1,2))
-                else if(priordistkernelparpar(1) .eq. 2)then
-                    valuefupdate5    = halfnormalden(postkernelparupdate(1),&
-                    & kernelparprior(1,1),kernelparprior(1,2))
-                    valuefcurrent5   = halfnormalden(kernelparop(j,1),&
-                    & kernelparprior(1,1),kernelparprior(1,2))
+                if (priordistkernelparpar(1) .eq. 1) then
+                    valuefupdate5    = gammadensity(postkernelparupdate(1), &
+                    & kernelparprior(1, 1), kernelparprior(1, 2))
+                    valuefcurrent5   = gammadensity(kernelparop(j, 1), &
+                    & kernelparprior(1, 1), kernelparprior(1, 2))
+                else if (priordistkernelparpar(1) .eq. 2) then
+                    valuefupdate5    = halfnormalden(postkernelparupdate(1), &
+                    & kernelparprior(1, 1), kernelparprior(1, 2))
+                    valuefcurrent5   = halfnormalden(kernelparop(j, 1), &
+                    & kernelparprior(1, 1), kernelparprior(1, 2))
                 else
-                    valuefupdate5    = uniformden(postkernelparupdate(1),&
-                    & kernelparprior(1,1),kernelparprior(1,2))
-                    valuefcurrent5   = uniformden(kernelparop(j,1),&
-                    & kernelparprior(1,1),kernelparprior(1,2))
+                    valuefupdate5    = uniformden(postkernelparupdate(1), &
+                    & kernelparprior(1, 1), kernelparprior(1, 2))
+                    valuefcurrent5   = uniformden(kernelparop(j, 1), &
+                    & kernelparprior(1, 1), kernelparprior(1, 2))
                 end if
 
 
 !calculating the log acceptance ratio:
                 ratio5 = (valueupdate5 + valuefupdate5)-(valuecurrent5 + valuefcurrent5)
 
-                psi5 = min(1.0_c_double,dexp(ratio5))
+                psi5 = min(1.0_c_double, dexp(ratio5))
 
 ! decision: accept/reject the proposed value:
 
                 call random_number(u5)
 
                 if (psi5 .ge. u5) then
-                    kernelparop(j+1,1) = postkernelparupdate(1)
+                    kernelparop(j+1, 1) = postkernelparupdate(1)
                 else
-                    kernelparop(j+1,1) = kernelparop(j,1)
+                    kernelparop(j+1, 1) = kernelparop(j, 1)
                 end if
 
 
@@ -929,68 +963,94 @@ contains
 
                 abs35 = 0
                 do while(abs35 .eq. 0)
-                    zkernelpar = randnormal(kernelparop(j,2),kernelparproposalvar(2))
-                    if(zkernelpar .gt. 0.0_c_double)then
+                    zkernelpar = randnormal(kernelparop(j, 2), kernelparproposalvar(2))
+                    if (zkernelpar .gt. 0.0_c_double) then
                         abs35 = 1
                     else
                         abs35 = 0
                     end if
                 end do        ! end while abs3
 
-                postkernelparupdate = (/ kernelparop(j+1,1),zkernelpar /)
-                postkernelparcurrent = (/ kernelparop(j+1,1),kernelparop(j,2) /)
+                postkernelparupdate = (/ kernelparop(j+1, 1), zkernelpar /)
+                postkernelparcurrent = (/ kernelparop(j+1, 1), kernelparop(j, 2) /)
 
 ! calculate the log-likelihood function:
-                call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3,&
-                    & suscov,transcov,susparop(j+1,:),powersusparop(j+1,:),&
-                    & transparop(j+1,:),powertransparop(j+1,:),postkernelparupdate,sparkop(j+1,1),valueupdate5)
+                call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3, &
+                    & suscov, transcov, susparop(j+1, :), powersusparop(j+1, :), &
+                    & transparop(j+1, :), powertransparop(j+1, :), postkernelparupdate, sparkop(j+1, 1), valueupdate5)
 
-                call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3,&
-                    & suscov,transcov,susparop(j+1,:),powersusparop(j+1,:),&
-                    & transparop(j+1,:),powertransparop(j+1,:),postkernelparcurrent,sparkop(j+1,1),valuecurrent5)
+                call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3, &
+                    & suscov, transcov, susparop(j+1, :), powersusparop(j+1, :), &
+                    & transparop(j+1, :), powertransparop(j+1, :), postkernelparcurrent, sparkop(j+1, 1), valuecurrent5)
 
 !calculating the log-prior:
-                if(priordistkernelparpar(2) .eq. 1)then
-                    valuefupdate5    = gammadensity(postkernelparupdate(2),&
-                    & kernelparprior(2,1),kernelparprior(2,2))
-                    valuefcurrent5   = gammadensity(kernelparop(j,2),&
-                    & kernelparprior(2,1),kernelparprior(2,2))
-                else if(priordistkernelparpar(2) .eq. 2)then
-                    valuefupdate5    = halfnormalden(postkernelparupdate(2),&
-                    & kernelparprior(2,1),kernelparprior(2,2))
-                    valuefcurrent5   = halfnormalden(kernelparop(j,2),&
-                    & kernelparprior(2,1),kernelparprior(2,2))
+                if (priordistkernelparpar(2) .eq. 1) then
+                    valuefupdate5    = gammadensity(postkernelparupdate(2), &
+                    & kernelparprior(2, 1), kernelparprior(2, 2))
+                    valuefcurrent5   = gammadensity(kernelparop(j, 2), &
+                    & kernelparprior(2, 1), kernelparprior(2, 2))
+                else if (priordistkernelparpar(2) .eq. 2) then
+                    valuefupdate5    = halfnormalden(postkernelparupdate(2), &
+                    & kernelparprior(2, 1), kernelparprior(2, 2))
+                    valuefcurrent5   = halfnormalden(kernelparop(j, 2), &
+                    & kernelparprior(2, 1), kernelparprior(2, 2))
                 else
-                    valuefupdate5    = uniformden(postkernelparupdate(2),&
-                    & kernelparprior(2,1),kernelparprior(2,2))
-                    valuefcurrent5   = uniformden(kernelparop(j,2),&
-                    & kernelparprior(2,1),kernelparprior(2,2))
+                    valuefupdate5    = uniformden(postkernelparupdate(2), &
+                    & kernelparprior(2, 1), kernelparprior(2, 2))
+                    valuefcurrent5   = uniformden(kernelparop(j, 2), &
+                    & kernelparprior(2, 1), kernelparprior(2, 2))
                 end if
 
 !calculating the log acceptance ratio:
                 ratio5 = (valueupdate5 + valuefupdate5)-(valuecurrent5 + valuefcurrent5)
 
-                psi5 = min(1.0_c_double,dexp(ratio5))
+                psi5 = min(1.0_c_double, dexp(ratio5))
 
 ! decision: accept/reject the proposed value:
                 call random_number(u5)
 
                 if (psi5 .ge. u5) then
-                    kernelparop(j+1,2) = postkernelparupdate(2)
+                    kernelparop(j+1, 2) = postkernelparupdate(2)
                 else
-                    kernelparop(j+1,2) = kernelparop(j,2)
+                    kernelparop(j+1, 2) = kernelparop(j, 2)
                 end if
 
 
 ! for network-based continuous-time ILMS:
-            else if(anum2(5) .eq. 3)then
-                kernelparop(j+1,:) = kernelparop(j,:)
+            else if (anum2(5) .eq. 3) then
+                kernelparop(j+1, :) = kernelparop(j, :)
             end if
 
+! to update the log-likelihood based on the updated parameters:
+            if (anum2(1) .eq. 1) then
 
-            call likelihoodSIR(n,ni,num,nsuspar,ntranspar,net,dis,epidat3,&
-            & suscov,transcov,susparop(j+1,:),powersusparop(j+1,:),&
-            & transparop(j+1,:),powertransparop(j+1,:),kernelparop(j+1,:),sparkop(j+1,1),loglik(j+1,1))
+                infdens = 0.0_C_DOUBLE
+                do i = 1, ni
+                    if (i .gt. obs_inf_time) then
+                        infdens = infdens + gammadensity(epidat3(i, 3), delta1op(j+1, 1), &
+                                & delta2op(j+1, 1))
+                    else
+                        infdens = infdens
+                    end if
+                end do
+
+                call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3, &
+                & suscov, transcov, susparop(j+1, :), powersusparop(j+1, :), &
+                & transparop(j+1, :), powertransparop(j+1, :), kernelparop(j+1, :), &
+                & sparkop(j+1, 1), loglik66)
+
+                loglik(j+1, 1) = loglik66 + infdens
+
+            else if (anum2(1) .eq. 2) then
+
+                call likelihoodSIR(n, ni, num, nsuspar, ntranspar, net, dis, epidat3, &
+                & suscov, transcov, susparop(j+1, :), powersusparop(j+1, :), &
+                & transparop(j+1, :), powertransparop(j+1, :), kernelparop(j+1, :), &
+                & sparkop(j+1, 1), loglik66)
+
+                loglik(j+1, 1) = loglik66
+
+            end if
 
         end do !end loop j (mcmc)
 
@@ -1009,27 +1069,27 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    subroutine likelihoodSIR(n,ninfected,num,nsuspar,ntranspar,cc,d333,epidat, &
-    & suscov,transcov,suspar,powersus,transpar,powertrans,kernelpar,spark,likk)
+    subroutine likelihoodSIR(n, ninfected, num, nsuspar, ntranspar, cc, d333, epidat, &
+    & suscov, transcov, suspar, powersus, transpar, powertrans, kernelpar, spark, likk)
 
     external infinity_value
 
-    integer:: j,i,r,m
-    integer,intent(in)::n,ninfected,num,nsuspar,ntranspar           !integers
-    double precision,intent(in):: spark                             ! spark parameter
-    double precision,intent(in),dimension(2):: kernelpar            ! parameter of the kernel function
-    double precision,intent(in),dimension(n,n)::d333,cc             ! distance & network matrices
-    double precision,intent(in),dimension(n,4)::epidat              ! epidemic data
-    double precision,intent(in),dimension(n,nsuspar)::suscov        ! susceptibility covariates
-    double precision,intent(in),dimension(n,ntranspar)::transcov    ! transmissibility covariates
-    double precision,intent(in),dimension(nsuspar)::suspar,powersus ! susceptibility parameters
-    double precision,intent(in),dimension(ntranspar)::transpar,powertrans ! transmissibility parameters
-    double precision,dimension(nsuspar)::suscov1                    ! suseptible covar. for one individual
-    double precision,dimension(ntranspar)::transcov1                ! transmissibilty covar. for one individual
-    double precision,intent(out)::likk                              ! OUTPUT
-    double precision::rate,tt,ss,qa1,qa2,likk1,likk2,Inf
-    double precision,dimension(n) :: gh,sss
-    double precision,dimension(ninfected) :: rt,df,rrate
+    integer :: j, i, r, m
+    integer, intent(in) :: n, ninfected, num, nsuspar, ntranspar           !integers
+    double precision, intent(in) :: spark                             ! spark parameter
+    double precision, intent(in), dimension(2) :: kernelpar            ! parameter of the kernel function
+    double precision, intent(in), dimension(n, n) :: d333, cc             ! distance & network matrices
+    double precision, intent(in), dimension(n, 4) :: epidat              ! epidemic data
+    double precision, intent(in), dimension(n, nsuspar) :: suscov        ! susceptibility covariates
+    double precision, intent(in), dimension(n, ntranspar) :: transcov    ! transmissibility covariates
+    double precision, intent(in), dimension(nsuspar) :: suspar, powersus ! susceptibility parameters
+    double precision, intent(in), dimension(ntranspar) :: transpar, powertrans ! transmissibility parameters
+    double precision, dimension(nsuspar) :: suscov1                    ! suseptible covar. for one individual
+    double precision, dimension(ntranspar) :: transcov1                ! transmissibilty covar. for one individual
+    double precision, intent(out) :: likk                              ! OUTPUT
+    double precision :: rate, tt, ss, qa1, qa2, likk1, likk2, Inf
+    double precision, dimension(n)  :: gh, sss
+    double precision, dimension(ninfected)  :: rt, df, rrate
 
 ! defining Infinity
     call infinity_value(Inf)
@@ -1040,53 +1100,53 @@ contains
 
 ! getting t_obs (maximum removal time):
 
-        tt = maxval(epidat(1:ninfected,2))
+        tt = maxval(epidat(1:ninfected, 2))
 
 !calculate the exponent part of the spark term:
-        do r = 1 , ninfected
-            sss(r) = spark * (min(tt,epidat(r,4)) - epidat(1,4))
+        do r = 1, ninfected
+            sss(r) = spark * (min(tt, epidat(r, 4)) - epidat(1, 4))
         end do
-        do r = (ninfected+1) , n
-            sss(r) = spark * (tt - epidat(1,4))
+        do r = (ninfected+1), n
+            sss(r) = spark * (tt - epidat(1, 4))
         end do
         ss = sum(sss)
 
 ! calculate the terms of the exponent part of the double summation:
         df = 0.0d0
 
-        do i =1,ninfected
-            do j = 1,n
-                if(j .le. ninfected)then
-                    if(j .ne. i)then
+        do i =1, ninfected
+            do j = 1, n
+                if (j .le. ninfected) then
+                    if (j .ne. i) then
 
-                        do m = 1 , nsuspar
-                            suscov1(m) = suscov(int(epidat(j,1)),m)**powersus(m)
+                        do m = 1, nsuspar
+                            suscov1(m) = suscov(int(epidat(j, 1)), m)**powersus(m)
                         end do
-                        do m = 1 , ntranspar
-                            transcov1(m) = transcov(int(epidat(i,1)),m)**powertrans(m)
+                        do m = 1, ntranspar
+                            transcov1(m) = transcov(int(epidat(i, 1)), m)**powertrans(m)
                         end do
 
-                        qa1 = dot_product(suspar,suscov1)
-                        qa2 = dot_product(transpar,transcov1)
-                        rate = qa1 * qa2 * (cc(int(epidat(i,1)),int(epidat(j,1))))
-                        gh(j)= ( min(epidat(i,2),epidat(j,4)) - min(epidat(i,4),epidat(j,4)) ) * (rate)
+                        qa1 = dot_product(suspar, suscov1)
+                        qa2 = dot_product(transpar, transcov1)
+                        rate = qa1 * qa2 * (cc(int(epidat(i, 1)), int(epidat(j, 1))))
+                        gh(j)= ( min(epidat(i, 2), epidat(j, 4)) - min(epidat(i, 4), epidat(j, 4)) ) * (rate)
                     else
                         rate = 0.0d0
                         gh(j)= 0.0d0
                     end if
                 else
 
-                    do m = 1 , nsuspar
-                        suscov1(m) = suscov(int(epidat(j,1)),m)**powersus(m)
+                    do m = 1, nsuspar
+                        suscov1(m) = suscov(int(epidat(j, 1)), m)**powersus(m)
                     end do
-                    do m = 1 , ntranspar
-                        transcov1(m) = transcov(int(epidat(i,1)),m)**powertrans(m)
+                    do m = 1, ntranspar
+                        transcov1(m) = transcov(int(epidat(i, 1)), m)**powertrans(m)
                     end do
 
-                    qa1 = dot_product(suspar,suscov1)
-                    qa2 = dot_product(transpar,transcov1) 
-                    rate = qa1 * qa2 * (cc(int(epidat(i,1)),int(epidat(j,1))))
-                    gh(j)   = ( epidat(i,2) - epidat(i,4)) * (rate)
+                    qa1 = dot_product(suspar, suscov1)
+                    qa2 = dot_product(transpar, transcov1) 
+                    rate = qa1 * qa2 * (cc(int(epidat(i, 1)), int(epidat(j, 1))))
+                    gh(j)   = ( epidat(i, 2) - epidat(i, 4)) * (rate)
                 end if
             end do
             df(i) = sum(gh)
@@ -1096,19 +1156,19 @@ contains
 
 ! calculate the first part of the likelihood:
         rt(1) = 1.0d0
-        do j = 2 , ninfected
-            do i = 1 , ninfected
-                if(i .ne. j)then
-                    if((epidat(j,4) .gt. epidat(i,4)) .and.  (epidat(j,4) .le. epidat(i,2)) ) then
-                        do m = 1 , nsuspar
-                            suscov1(m) = suscov(int(epidat(j,1)),m)**powersus(m)
+        do j = 2, ninfected
+            do i = 1, ninfected
+                if (i .ne. j) then
+                    if ((epidat(j, 4) .gt. epidat(i, 4)) .and.  (epidat(j, 4) .le. epidat(i, 2)) ) then
+                        do m = 1, nsuspar
+                            suscov1(m) = suscov(int(epidat(j, 1)), m)**powersus(m)
                         end do
-                        do m = 1 , ntranspar
-                            transcov1(m) = transcov(int(epidat(i,1)),m)**powertrans(m)
+                        do m = 1, ntranspar
+                            transcov1(m) = transcov(int(epidat(i, 1)), m)**powertrans(m)
                         end do
-                        qa1 = dot_product(suspar,suscov1)
-                        qa2 = dot_product(transpar,transcov1) 
-                        rrate(i) = qa1 * qa2 * (cc(int(epidat(i,1)),int(epidat(j,1))))
+                        qa1 = dot_product(suspar, suscov1)
+                        qa2 = dot_product(transpar, transcov1) 
+                        rrate(i) = qa1 * qa2 * (cc(int(epidat(i, 1)), int(epidat(j, 1))))
                     else
                         rrate(i)   = 0.0d0
                     end if
@@ -1132,51 +1192,51 @@ contains
 
 ! getting t_obs (maximum removal time):
 
-        tt = maxval(epidat(1:ninfected,2))
+        tt = maxval(epidat(1:ninfected, 2))
 
 !calculate the exponent part of the spark term:
-        do r = 1 , ninfected
-            sss(r) = spark * (min(tt,epidat(r,4)) - epidat(1,4))
+        do r = 1, ninfected
+            sss(r) = spark * (min(tt, epidat(r, 4)) - epidat(1, 4))
         end do
-        do r = (ninfected+1) , n
-            sss(r) = spark * (tt - epidat(1,4))
+        do r = (ninfected+1), n
+            sss(r) = spark * (tt - epidat(1, 4))
         end do
         ss = sum(sss)
 
 ! calculate the terms of the exponent part of the double summation:
         df = 0.0d0
 
-        do i =1,ninfected
-            do j = 1,n
-                if(j .le. ninfected)then
-                    if(j .ne. i)then
+        do i =1, ninfected
+            do j = 1, n
+                if (j .le. ninfected) then
+                    if (j .ne. i) then
 
-                        do m = 1 , nsuspar
-                            suscov1(m) = suscov(int(epidat(j,1)),m)**powersus(m)
+                        do m = 1, nsuspar
+                            suscov1(m) = suscov(int(epidat(j, 1)), m)**powersus(m)
                         end do
-                        do m = 1 , ntranspar
-                            transcov1(m) = transcov(int(epidat(i,1)),m)**powertrans(m)
+                        do m = 1, ntranspar
+                            transcov1(m) = transcov(int(epidat(i, 1)), m)**powertrans(m)
                         end do
 
-                        qa1 = dot_product(suspar,suscov1)
-                        qa2 = dot_product(transpar,transcov1)
-                        rate = qa1 * qa2 * (d333(int(epidat(i,1)),int(epidat(j,1)))**(-kernelpar(1)))
-                        gh(j)   = ( min(epidat(i,2),epidat(j,4)) - min(epidat(i,4),epidat(j,4)) ) * (rate)
+                        qa1 = dot_product(suspar, suscov1)
+                        qa2 = dot_product(transpar, transcov1)
+                        rate = qa1 * qa2 * (d333(int(epidat(i, 1)), int(epidat(j, 1)))**(-kernelpar(1)))
+                        gh(j)   = ( min(epidat(i, 2), epidat(j, 4)) - min(epidat(i, 4), epidat(j, 4)) ) * (rate)
                     else
                         gh(j)   = 0.0d0
                     end if
                 else
-                    do m = 1 , nsuspar
-                        suscov1(m) = suscov(int(epidat(j,1)),m)**powersus(m)
+                    do m = 1, nsuspar
+                        suscov1(m) = suscov(int(epidat(j, 1)), m)**powersus(m)
                     end do
-                    do m = 1 , ntranspar
-                        transcov1(m) = transcov(int(epidat(i,1)),m)**powertrans(m)
+                    do m = 1, ntranspar
+                        transcov1(m) = transcov(int(epidat(i, 1)), m)**powertrans(m)
                     end do
 
-                    qa1 = dot_product(suspar,suscov1)
-                    qa2 = dot_product(transpar,transcov1)
-                    rate = qa1 * qa2 * (d333(int(epidat(i,1)),int(epidat(j,1)))**(-kernelpar(1)))
-                    gh(j)   = ( epidat(i,2) - epidat(i,4) ) * (rate)
+                    qa1 = dot_product(suspar, suscov1)
+                    qa2 = dot_product(transpar, transcov1)
+                    rate = qa1 * qa2 * (d333(int(epidat(i, 1)), int(epidat(j, 1)))**(-kernelpar(1)))
+                    gh(j)   = ( epidat(i, 2) - epidat(i, 4) ) * (rate)
                 end if
             end do
             df(i) = sum(gh)
@@ -1186,21 +1246,21 @@ contains
 
 ! calculate the first part of the likelihood:
         rt(1) = 1.0d0
-        do j = 2 , ninfected
-            do i = 1 , ninfected
-                if(i .ne. j)then
-                    if((epidat(j,4) .gt. epidat(i,4)) .and.  (epidat(j,4) .le. epidat(i,2))) then
+        do j = 2, ninfected
+            do i = 1, ninfected
+                if (i .ne. j) then
+                    if ((epidat(j, 4) .gt. epidat(i, 4)) .and.  (epidat(j, 4) .le. epidat(i, 2))) then
 
-                        do m = 1 , nsuspar
-                            suscov1(m) = suscov(int(epidat(j,1)),m)**powersus(m)
+                        do m = 1, nsuspar
+                            suscov1(m) = suscov(int(epidat(j, 1)), m)**powersus(m)
                         end do
-                        do m = 1 , ntranspar
-                            transcov1(m) = transcov(int(epidat(i,1)),m)**powertrans(m)
+                        do m = 1, ntranspar
+                            transcov1(m) = transcov(int(epidat(i, 1)), m)**powertrans(m)
                         end do
 
-                        qa1 = dot_product(suspar,suscov1)
-                        qa2 = dot_product(transpar,transcov1)
-                        rrate(i) = qa1 * qa2 * (d333(int(epidat(i,1)),int(epidat(j,1)))**(-kernelpar(1)))
+                        qa1 = dot_product(suspar, suscov1)
+                        qa2 = dot_product(transpar, transcov1)
+                        rrate(i) = qa1 * qa2 * (d333(int(epidat(i, 1)), int(epidat(j, 1)))**(-kernelpar(1)))
                     else
                         rrate(i)   = 0.0d0
                     end if
@@ -1225,54 +1285,54 @@ contains
 ! for distance-based ILM with Cauchy kernel.
 
 ! getting t_obs (maximum removal time):
-        tt = maxval(epidat(1:ninfected,2))
+        tt = maxval(epidat(1:ninfected, 2))
 
 !calculate the exponent part of the spark term:
-        do r = 1 , ninfected
-            sss(r) = spark * (min(tt,epidat(r,4)) - epidat(1,4))
+        do r = 1, ninfected
+            sss(r) = spark * (min(tt, epidat(r, 4)) - epidat(1, 4))
         end do
-        do r = (ninfected+1) , n
-            sss(r) = spark * (tt - epidat(1,4))
+        do r = (ninfected+1), n
+            sss(r) = spark * (tt - epidat(1, 4))
         end do
         ss = sum(sss)
 
 ! calculate the terms of the exponent part of the double summation:
         df = 0.0d0
 
-        do i =1,ninfected
-            do j = 1,n
-                if(j .le. ninfected)then
-                    if(j .ne. i)then
+        do i =1, ninfected
+            do j = 1, n
+                if (j .le. ninfected) then
+                    if (j .ne. i) then
 
-                        do m = 1 , nsuspar
-                            suscov1(m) = suscov(int(epidat(j,1)),m)**powersus(m)
+                        do m = 1, nsuspar
+                            suscov1(m) = suscov(int(epidat(j, 1)), m)**powersus(m)
                         end do
-                        do m = 1 , ntranspar
-                            transcov1(m) = transcov(int(epidat(i,1)),m)**powertrans(m)
+                        do m = 1, ntranspar
+                            transcov1(m) = transcov(int(epidat(i, 1)), m)**powertrans(m)
                         end do
 
-                        qa1 = dot_product(suspar,suscov1)
-                        qa2 = dot_product(transpar,transcov1)
-                        rate = qa1 * qa2 * (kernelpar(1)/((d333(int(epidat(i,1)),int(epidat(j,1)))**(2.0d0))+ &
+                        qa1 = dot_product(suspar, suscov1)
+                        qa2 = dot_product(transpar, transcov1)
+                        rate = qa1 * qa2 * (kernelpar(1)/((d333(int(epidat(i, 1)), int(epidat(j, 1)))**(2.0d0))+ &
                         & (kernelpar(1)**(2.0d0))))
-                        gh(j)   = ( min(epidat(i,2),epidat(j,4)) - min(epidat(i,4),epidat(j,4)) ) * (rate)
+                        gh(j)   = ( min(epidat(i, 2), epidat(j, 4)) - min(epidat(i, 4), epidat(j, 4)) ) * (rate)
                     else
                         gh(j)   = 0.0d0
                     end if
                 else
 
-                    do m = 1 , nsuspar
-                        suscov1(m) = suscov(int(epidat(j,1)),m)**powersus(m)
+                    do m = 1, nsuspar
+                        suscov1(m) = suscov(int(epidat(j, 1)), m)**powersus(m)
                     end do
-                    do m = 1 , ntranspar
-                        transcov1(m) = transcov(int(epidat(i,1)),m)**powertrans(m)
+                    do m = 1, ntranspar
+                        transcov1(m) = transcov(int(epidat(i, 1)), m)**powertrans(m)
                     end do
 
-                    qa1 = dot_product(suspar,suscov1)
-                    qa2 = dot_product(transpar,transcov1)
-                    rate = qa1 * qa2 * (kernelpar(1)/((d333(int(epidat(i,1)),int(epidat(j,1)))**(2.0d0))+ &
+                    qa1 = dot_product(suspar, suscov1)
+                    qa2 = dot_product(transpar, transcov1)
+                    rate = qa1 * qa2 * (kernelpar(1)/((d333(int(epidat(i, 1)), int(epidat(j, 1)))**(2.0d0))+ &
                     & (kernelpar(1)**(2.0d0))))
-                    gh(j)   = ( epidat(i,2) - epidat(i,4) ) * (rate)
+                    gh(j)   = ( epidat(i, 2) - epidat(i, 4) ) * (rate)
                 end if
             end do
             df(i) = sum(gh)
@@ -1282,21 +1342,21 @@ contains
 
 ! calculate the first part of the likelihood:
         rt(1) = 1.0d0
-        do j = 2 , ninfected
-            do i = 1 , ninfected
-                if(i .ne. j)then
-                    if((epidat(j,4) .gt. epidat(i,4)) .and.  (epidat(j,4) .le. epidat(i,2))) then
+        do j = 2, ninfected
+            do i = 1, ninfected
+                if (i .ne. j) then
+                    if ((epidat(j, 4) .gt. epidat(i, 4)) .and.  (epidat(j, 4) .le. epidat(i, 2))) then
 
-                        do m = 1 , nsuspar
-                            suscov1(m) = suscov(int(epidat(j,1)),m)**powersus(m)
+                        do m = 1, nsuspar
+                            suscov1(m) = suscov(int(epidat(j, 1)), m)**powersus(m)
                         end do
-                        do m = 1 , ntranspar
-                            transcov1(m) = transcov(int(epidat(i,1)),m)**powertrans(m)
+                        do m = 1, ntranspar
+                            transcov1(m) = transcov(int(epidat(i, 1)), m)**powertrans(m)
                         end do
 
-                        qa1 = dot_product(suspar,suscov1)
-                        qa2 = dot_product(transpar,transcov1)
-                        rrate(i) = qa1 * qa2 * (kernelpar(1)/((d333(int(epidat(i,1)),int(epidat(j,1)))**(2.0d0))+ &
+                        qa1 = dot_product(suspar, suscov1)
+                        qa2 = dot_product(transpar, transcov1)
+                        rrate(i) = qa1 * qa2 * (kernelpar(1)/((d333(int(epidat(i, 1)), int(epidat(j, 1)))**(2.0d0))+ &
                         & (kernelpar(1)**(2.0d0))))
                     else
                         rrate(i)   = 0.0d0
@@ -1321,58 +1381,58 @@ contains
 ! for combined network- and distance-based ILM with power-law kernel.
 
 ! getting t_obs (maximum removal time):
-        tt = maxval(epidat(1:ninfected,2))
+        tt = maxval(epidat(1:ninfected, 2))
 
 !calculate the exponent part of the spark term:
-        do r = 1 , ninfected
-            sss(r) = spark * (min(tt,epidat(r,4)) - epidat(1,4))
+        do r = 1, ninfected
+            sss(r) = spark * (min(tt, epidat(r, 4)) - epidat(1, 4))
         end do
-        do r = (ninfected+1) , n
-            sss(r) = spark * (tt - epidat(1,4))
+        do r = (ninfected+1), n
+            sss(r) = spark * (tt - epidat(1, 4))
         end do
         ss = sum(sss)
 
 ! calculate the terms of the exponent part of the double summation:
         df = 0.0d0
 
-        do i =1,ninfected
-            do j = 1,n
-                if(j .le. ninfected)then
-                    if(j .ne. i)then
+        do i =1, ninfected
+            do j = 1, n
+                if (j .le. ninfected) then
+                    if (j .ne. i) then
 
-                        do m = 1 , nsuspar
-                            suscov1(m) = suscov(int(epidat(j,1)),m)**powersus(m)
+                        do m = 1, nsuspar
+                            suscov1(m) = suscov(int(epidat(j, 1)), m)**powersus(m)
                         end do
-                        do m = 1 , ntranspar
-                            transcov1(m) = transcov(int(epidat(i,1)),m)**powertrans(m)
+                        do m = 1, ntranspar
+                            transcov1(m) = transcov(int(epidat(i, 1)), m)**powertrans(m)
                         end do
 
-                        qa1 = dot_product(suspar,suscov1)
-                        qa2 = dot_product(transpar,transcov1)
+                        qa1 = dot_product(suspar, suscov1)
+                        qa2 = dot_product(transpar, transcov1)
 
-                        rate = qa1 * qa2 * ( (d333(int(epidat(i,1)),int(epidat(j,1)))**(-kernelpar(1))) + &
-                        &  (kernelpar(2)*cc(int(epidat(i,1)),int(epidat(j,1)))) )
+                        rate = qa1 * qa2 * ( (d333(int(epidat(i, 1)), int(epidat(j, 1)))**(-kernelpar(1))) + &
+                        &  (kernelpar(2)*cc(int(epidat(i, 1)), int(epidat(j, 1)))) )
 
-                        gh(j)   = ( min(epidat(i,2),epidat(j,4)) - min(epidat(i,4),epidat(j,4)) ) * (rate)
+                        gh(j)   = ( min(epidat(i, 2), epidat(j, 4)) - min(epidat(i, 4), epidat(j, 4)) ) * (rate)
                     else
                         gh(j)   = 0.0d0
                     end if
                 else
 
-                    do m = 1 , nsuspar
-                        suscov1(m) = suscov(int(epidat(j,1)),m)**powersus(m)
+                    do m = 1, nsuspar
+                        suscov1(m) = suscov(int(epidat(j, 1)), m)**powersus(m)
                     end do
-                    do m = 1 , ntranspar
-                        transcov1(m) = transcov(int(epidat(i,1)),m)**powertrans(m)
+                    do m = 1, ntranspar
+                        transcov1(m) = transcov(int(epidat(i, 1)), m)**powertrans(m)
                     end do
 
-                    qa1 = dot_product(suspar,suscov1)
-                    qa2 = dot_product(transpar,transcov1)
+                    qa1 = dot_product(suspar, suscov1)
+                    qa2 = dot_product(transpar, transcov1)
 
-                    rate = qa1 * qa2 * ( (d333(int(epidat(i,1)),int(epidat(j,1)))**(-kernelpar(1))) + &
-                    &  (kernelpar(2)*cc(int(epidat(i,1)),int(epidat(j,1)))) )
+                    rate = qa1 * qa2 * ( (d333(int(epidat(i, 1)), int(epidat(j, 1)))**(-kernelpar(1))) + &
+                    &  (kernelpar(2)*cc(int(epidat(i, 1)), int(epidat(j, 1)))) )
 
-                    gh(j)   = ( epidat(i,2) - epidat(i,4) ) * (rate)
+                    gh(j)   = ( epidat(i, 2) - epidat(i, 4) ) * (rate)
                 end if
             end do
             df(i) = sum(gh)
@@ -1382,23 +1442,23 @@ contains
 
 ! calculate the first part of the likelihood:
         rt(1) = 1.0d0
-        do j = 2 , ninfected
-            do i = 1 , ninfected
-                if(i .ne. j)then
-                    if((epidat(j,4) .gt. epidat(i,4)) .and.  (epidat(j,4) .le. epidat(i,2))) then
+        do j = 2, ninfected
+            do i = 1, ninfected
+                if (i .ne. j) then
+                    if ((epidat(j, 4) .gt. epidat(i, 4)) .and.  (epidat(j, 4) .le. epidat(i, 2))) then
 
-                        do m = 1 , nsuspar
-                            suscov1(m) = suscov(int(epidat(j,1)),m)**powersus(m)
+                        do m = 1, nsuspar
+                            suscov1(m) = suscov(int(epidat(j, 1)), m)**powersus(m)
                         end do
-                        do m = 1 , ntranspar
-                            transcov1(m) = transcov(int(epidat(i,1)),m)**powertrans(m)
+                        do m = 1, ntranspar
+                            transcov1(m) = transcov(int(epidat(i, 1)), m)**powertrans(m)
                         end do
 
-                        qa1 = dot_product(suspar,suscov1)
-                        qa2 = dot_product(transpar,transcov1)
+                        qa1 = dot_product(suspar, suscov1)
+                        qa2 = dot_product(transpar, transcov1)
 
-                        rrate(i) = qa1 * qa2 * ( (d333(int(epidat(i,1)),int(epidat(j,1)))**(-kernelpar(1))) + &
-                        &  (kernelpar(2)*cc(int(epidat(i,1)),int(epidat(j,1)))) )
+                        rrate(i) = qa1 * qa2 * ( (d333(int(epidat(i, 1)), int(epidat(j, 1)))**(-kernelpar(1))) + &
+                        &  (kernelpar(2)*cc(int(epidat(i, 1)), int(epidat(j, 1)))) )
 
                     else
                         rrate(i)   = 0.0d0
@@ -1425,58 +1485,58 @@ contains
 ! for combined network- and distance-based ILM with Cauchy kernel.
 
 ! getting t_obs (maximum removal time):
-        tt = maxval(epidat(1:ninfected,2))
+        tt = maxval(epidat(1:ninfected, 2))
 
 !calculate the exponent part of the spark term:
-        do r = 1 , ninfected
-            sss(r) = spark * (min(tt,epidat(r,4)) - epidat(1,4))
+        do r = 1, ninfected
+            sss(r) = spark * (min(tt, epidat(r, 4)) - epidat(1, 4))
         end do
-        do r = (ninfected+1) , n
-            sss(r) = spark * (tt - epidat(1,4))
+        do r = (ninfected+1), n
+            sss(r) = spark * (tt - epidat(1, 4))
         end do
         ss = sum(sss)
 
 ! calculate the terms of the exponent part of the double summation:
         df = 0.0d0
 
-        do i =1,ninfected
-            do j = 1,n
-                if(j .le. ninfected)then
-                    if(j .ne. i)then
+        do i =1, ninfected
+            do j = 1, n
+                if (j .le. ninfected) then
+                    if (j .ne. i) then
 
-                        do m = 1 , nsuspar
-                            suscov1(m) = suscov(int(epidat(j,1)),m)**powersus(m)
+                        do m = 1, nsuspar
+                            suscov1(m) = suscov(int(epidat(j, 1)), m)**powersus(m)
                         end do
-                        do m = 1 , ntranspar
-                            transcov1(m) = transcov(int(epidat(i,1)),m)**powertrans(m)
+                        do m = 1, ntranspar
+                            transcov1(m) = transcov(int(epidat(i, 1)), m)**powertrans(m)
                         end do
 
-                        qa1 = dot_product(suspar,suscov1)
-                        qa2 = dot_product(transpar,transcov1)
+                        qa1 = dot_product(suspar, suscov1)
+                        qa2 = dot_product(transpar, transcov1)
 
-                        rate = qa1 * qa2 * ( (kernelpar(1)/((d333(int(epidat(i,1)),int(epidat(j,1)))**(2.0d0))+ &
-                        & kernelpar(1)**(2.0d0))) + (kernelpar(2)*cc(int(epidat(i,1)),int(epidat(j,1)))) )
+                        rate = qa1 * qa2 * ( (kernelpar(1)/((d333(int(epidat(i, 1)), int(epidat(j, 1)))**(2.0d0))+ &
+                        & kernelpar(1)**(2.0d0))) + (kernelpar(2)*cc(int(epidat(i, 1)), int(epidat(j, 1)))) )
 
-                        gh(j)   = ( min(epidat(i,2),epidat(j,4)) - min(epidat(i,4),epidat(j,4)) ) * (rate)
+                        gh(j)   = ( min(epidat(i, 2), epidat(j, 4)) - min(epidat(i, 4), epidat(j, 4)) ) * (rate)
                     else
                         gh(j)   = 0.0d0
                     end if
                 else
 
-                    do m = 1 , nsuspar
-                        suscov1(m) = suscov(int(epidat(j,1)),m)**powersus(m)
+                    do m = 1, nsuspar
+                        suscov1(m) = suscov(int(epidat(j, 1)), m)**powersus(m)
                     end do
-                    do m = 1 , ntranspar
-                        transcov1(m) = transcov(int(epidat(i,1)),m)**powertrans(m)
+                    do m = 1, ntranspar
+                        transcov1(m) = transcov(int(epidat(i, 1)), m)**powertrans(m)
                     end do
 
-                    qa1 = dot_product(suspar,suscov1)
-                    qa2 = dot_product(transpar,transcov1)
+                    qa1 = dot_product(suspar, suscov1)
+                    qa2 = dot_product(transpar, transcov1)
 
-                    rate = qa1 * qa2 * ( (kernelpar(1)/((d333(int(epidat(i,1)),int(epidat(j,1)))**(2.0d0))+ &
-                    & kernelpar(1)**(2.0d0))) + (kernelpar(2)*cc(int(epidat(i,1)),int(epidat(j,1)))) )
+                    rate = qa1 * qa2 * ( (kernelpar(1)/((d333(int(epidat(i, 1)), int(epidat(j, 1)))**(2.0d0))+ &
+                    & kernelpar(1)**(2.0d0))) + (kernelpar(2)*cc(int(epidat(i, 1)), int(epidat(j, 1)))) )
 
-                    gh(j)   = ( epidat(i,2) - epidat(i,4) ) * (rate)
+                    gh(j)   = ( epidat(i, 2) - epidat(i, 4) ) * (rate)
                 end if
             end do
             df(i) = sum(gh)
@@ -1486,23 +1546,23 @@ contains
 
 ! calculate the first part of the likelihood:
         rt(1) = 1.0d0
-        do j = 2 , ninfected
-            do i = 1 , ninfected
-                if(i .ne. j)then
-                    if((epidat(j,4) .gt. epidat(i,4)) .and.  (epidat(j,4) .le. epidat(i,2))) then
+        do j = 2, ninfected
+            do i = 1, ninfected
+                if (i .ne. j) then
+                    if ((epidat(j, 4) .gt. epidat(i, 4)) .and.  (epidat(j, 4) .le. epidat(i, 2))) then
 
-                        do m = 1 , nsuspar
-                            suscov1(m) = suscov(int(epidat(j,1)),m)**powersus(m)
+                        do m = 1, nsuspar
+                            suscov1(m) = suscov(int(epidat(j, 1)), m)**powersus(m)
                         end do
-                        do m = 1 , ntranspar
-                            transcov1(m) = transcov(int(epidat(i,1)),m)**powertrans(m)
+                        do m = 1, ntranspar
+                            transcov1(m) = transcov(int(epidat(i, 1)), m)**powertrans(m)
                         end do
 
-                        qa1 = dot_product(suspar,suscov1)
-                        qa2 = dot_product(transpar,transcov1)
+                        qa1 = dot_product(suspar, suscov1)
+                        qa2 = dot_product(transpar, transcov1)
 
-                        rrate(i) = qa1 * qa2 * ( (kernelpar(1)/((d333(int(epidat(i,1)),int(epidat(j,1)))**(2.0d0))+&
-                        & kernelpar(1)**(2.0d0))) + (kernelpar(2)*cc(int(epidat(i,1)),int(epidat(j,1)))) )
+                        rrate(i) = qa1 * qa2 * ( (kernelpar(1)/((d333(int(epidat(i, 1)), int(epidat(j, 1)))**(2.0d0))+&
+                        & kernelpar(1)**(2.0d0))) + (kernelpar(2)*cc(int(epidat(i, 1)), int(epidat(j, 1)))) )
 
                     else
                         rrate(i)   = 0.0d0
@@ -1540,13 +1600,13 @@ contains
 
 !#################### HALF-NORMAL density ######################
 
-    FUNCTION halfnormalden(alpha,a,b) RESULT(pdf)
+    FUNCTION halfnormalden(alpha, a, b) RESULT(pdf)
     implicit none
-    double precision, parameter:: pi = 3.141592653589793D+00
-    double precision :: alpha,b,a
-    double precision :: val,pdf
+    double precision, parameter :: pi = 3.141592653589793D+00
+    double precision  :: alpha, b, a
+    double precision  :: val, pdf
 
-        if(alpha .lt. a)then
+        if (alpha .lt. a) then
             val = 0.0d0
         else
             val =  sqrt (2 / pi*b) * exp ( - 0.5D+00 * ((alpha)**2 / b) )
@@ -1558,12 +1618,12 @@ contains
 
 !#################### GAMMA density ######################
 
-    FUNCTION gammadensity(x,a,b) RESULT(pdf1)
+    FUNCTION gammadensity(x, a, b) RESULT(pdf1)
     implicit none
-    double precision :: x,a,b
-    double precision :: dn,pdf1
+    double precision  :: x, a, b
+    double precision  :: dn, pdf1
 
-        if(x .le. 0.0d0)then
+        if (x .le. 0.0d0) then
             dn = 0.0d0
         else
             dn = (x**(a-1.0d0)) * dexp(- (x*b))
@@ -1574,13 +1634,13 @@ contains
 
 !#################### UNIFORM density ######################
 
-    function uniformden(val,a,b) result(pdf)
+    function uniformden(val, a, b) result(pdf)
     implicit none
-    double precision:: val, a,b,pdf1,pdf
+    double precision :: val, a, b, pdf1, pdf
 
-        if(val .ge. b) then
+        if (val .ge. b) then
             pdf1 = 0.0d0
-        else if(val .le. a) then
+        else if (val .le. a) then
             pdf1 = 0.0d0
         else
             pdf1 = (1.0d0/(b-a))
@@ -1600,12 +1660,12 @@ contains
 
 !####################  NORMAL distribution ######################
 
-    FUNCTION randnormal(mean,stdev) RESULT(c)
+    FUNCTION randnormal(mean, stdev) RESULT(c)
 
     implicit none
 
-    double precision :: mean,stdev,c,temp(2),r,theta
-    double precision, PARAMETER :: PI=3.141592653589793238462d0
+    double precision  :: mean, stdev, c, temp(2), r, theta
+    double precision, PARAMETER  :: PI=3.141592653589793238462d0
 
         CALL RANDOM_NUMBER(temp)
         r=(-2.0d0*log(temp(1)))**0.5d0
@@ -1617,7 +1677,7 @@ contains
 !#################### GAMMA distribution ######################
 
     RECURSIVE FUNCTION randgamma(shape, SCALE) RESULT(ans)
-    double precision SHAPE,scale,u,w,d,c,x,xsq,g,ans,v
+    double precision SHAPE, scale, u, w, d, c, x, xsq, g, ans, v
 !
 ! ## Implementation based on "A Simple Method for Generating Gamma Variables"
 ! ## by George Marsaglia and Wai Wan Tsang.
@@ -1639,7 +1699,7 @@ contains
                 CALL RANDOM_NUMBER(u)
                 xsq = x*x
                 IF ((u < 1.0d0 -.0331d0*xsq*xsq) .OR.  &
-                (log(u) < 0.5d0*xsq + d*(1.0d0 - v + log(v))) )then
+                (log(u) < 0.5d0*xsq + d*(1.0d0 - v + log(v))) ) then
                     ans=scale*d*v
                     RETURN
                 END IF
@@ -1654,49 +1714,46 @@ contains
 
     END FUNCTION
 
-!The seed for the random number generation method random_number() has been reset
-    subroutine initrandomseedsir()
+    !The seed for the random number generation method random_number() has been reset
+
+    subroutine initrandomseedsir(temp)
     implicit none
-    integer :: i
-    integer :: n
-    integer :: clock
+    integer :: n!, clock
+    integer, intent(in):: temp
     integer, dimension(:), allocatable :: seed
 
         call random_seed(size = n)
         allocate(seed(n))
-
-        call system_clock(COUNT=clock)
-
-        seed = clock + 37 * (/ (i - 1, i = 1, n) /)
+        seed = temp
         call random_seed(PUT = seed)
-
         deallocate(seed)
+
     end subroutine initrandomseedsir
 
 
 ! Generating random samples without replacement:
-    SUBROUTINE RANSAMsir(x,a,n,k)
+    SUBROUTINE RANSAMsir(x, a, n, k)
     implicit none
-    integer::j,m,l
-    double precision:: u
-    integer,intent(in)::n,k
-    integer,intent(in),dimension(n)::x
-    integer,intent(out),dimension(k)::a
+    integer :: j, m, l
+    double precision :: u
+    integer, intent(in) :: n, k
+    integer, intent(in), dimension(n) :: x
+    integer, intent(out), dimension(k) :: a
 
         m=0
-        do j = 1 , n
+        do j = 1, n
             call random_number(u)
 
             l = int(float((n-j+1)) * u) + 1
 
-            if(l .le. (k-m))then
+            if (l .le. (k-m)) then
                 m = m + 1
                 a(m) = x(j)
             else
                 m = m
             end if
 
-            if(m .ge. k)then
+            if (m .ge. k) then
                 exit
             end if
         end do

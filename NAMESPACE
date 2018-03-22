@@ -1,18 +1,21 @@
 ################################################
-## import name space
-################################################
-import(stats)
-import(graphics)
-import(grDevices)
-import(utils)
-import(tools)
-
-
-################################################
 ## useDynLib
 ################################################
 
 useDynLib(EpiILMCT, .registration = TRUE)
+
+
+################################################
+## import name space
+################################################
+
+import(stats)
+import(graphics)
+import(grDevices)
+import(methods)
+import(utils)
+import(tools)
+import(coda)
 
 
 ################################################
@@ -24,3 +27,12 @@ export(contactnet)
 export(datagen)
 export(epictmcmc)
 export(loglikelihoodepiILM)
+
+################################################
+## S3 methods:
+################################################
+
+S3method(print, epictmcmc)
+S3method(print, summary.epictmcmc)
+S3method(summary, epictmcmc)
+S3method(plot, epictmcmc)

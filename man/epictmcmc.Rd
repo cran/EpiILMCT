@@ -15,7 +15,7 @@ blockupdate = NULL, nsim, sus.par = NULL, trans.par = NULL, power.sus = NULL,
 	
 power.trans = NULL, kernel.par = NULL, spark.par = NULL, delta = NULL, gamma.par = NULL, 
 	
-suscov = NULL, transcov = NULL, periodproposal=NULL )
+suscov = NULL, transcov = NULL, periodproposal = NULL, seedval = NULL )
 
 }
 
@@ -76,8 +76,11 @@ Covariate matrix of the susceptibility function, representing each covariate in 
 Covariate matrix of the transmissibility function, representing each covariate in a column. If intercept exists or in the case of no covariates, the first column is set to unity.
 }
   \item{periodproposal}{
-A vector/matrix of the proposal distribution parameters of the independence sampler for updating the infectious period (SIR model), or the incubation and/or delay periods (SINR model). Here, we set the proposal distribution to gamma distribution. It is required when \code{datatype} is set to ``known removal'' or ``unknown removal''.
+A vector/matrix of the proposal distribution parameters of the independence sampler for updating the infectious period (SIR model), or the incubation and/or delay periods (SINR model). Here, we set the proposal distribution to gamma distribution. It is required when \code{datatype} is set to ``known removal'' or ``unknown removal''. Default = NULL means the parameters of the gamma proposal distribution are the known shape and updated rate values based on the argument \code{delta}.
 }
+  \item{seedval}{ 
+  	An integer initialized seed value to fix the (Fortran) random number generator used in the MCMC procedure. A random seed value is used as a defualt.
+  	}
 }
 
 
@@ -105,71 +108,76 @@ Note that, setting the variance of the normal proposal distribution to zero fixe
 
 }
 \value{
-
-Returns a list of the MCMC samples as follows:
+Returns an object of class \code{epictmcmc} that contains:
    \describe{
-    \item{1}{The MCMC samples of the model parameters.}
-    \item{2}{The MCMC samples of the infection times when \code{datatype} set to ``known removal'' or ``unknown removal''.}
-    \item{3}{The MCMC samples of the removal times when \code{datatype} set to ``unknown removal''.}
+    \item{compart.framework:}{the compartmental framework model used in the analysis.}
+    \item{kernel.type:}{the used \code{kernel.type} in the function.}
+    \item{data.assumption:}{the assumed event times \code{datatype}.}
+    \item{parameter.samples:}{the MCMC output of the updated model parameters.}
+    \item{log.posterior:}{the log posterior densities.}
+    \item{acceptance.rate:}{the acceptance rates for updates of each parameter.}
+    \item{number.iteration:}{the number of iterations.}
+    \item{number.parameter:}{the number of the unknown model parameters.}
+    \item{infection.times.samples:}{the updated infection times when \code{datatype} is set to ``known removal''.}
+    \item{Average.infectious.periods:}{the average infectious period when \code{type} is set to ``SIR'' and \code{datatype} is set to ``known removal''.}
+    \item{removal.times.samples:}{the updated removal times when \code{datatype} is set to ``unknown removal''.}
+    \item{Average.incubation.periods:}{the average incubation period when \code{type} is set to ``SINR'' and \code{datatype} is set to either ``known removal'' or ``unknown removal''.}
+    \item{Average.delay.periods:}{the average delay period when \code{type} is set to ``SINR'' and \code{datatype} is set to ``unknown removal''.}
+    
   }
-
 }
 
 \seealso{
-  \code{\link{datagen}, \link{loglikelihoodepiILM}}.
+  \code{\link{print.epictmcmc}}, \code{\link{summary.epictmcmc}}, \code{\link{plot.epictmcmc}}, \code{\link{datagen}}, \code{\link{loglikelihoodepiILM}}.
 }
 
 \examples{
-\dontrun{
-	
-library(EpiILMCT)
+\dontrun{	
 ## distance-based SIR continuous-time ILMs ##
 data(SpatialData)
 ## performing the MCMC-tool for analyzing the fully observed spatial data 
 ## under the SIR distance-based continuous ILM:
-mcmcres2<-epictmcmc(epidat=SpatialData$epi,type="SIR",kerneltype="distance", 
-kernelmatrix=SpatialData$dis,
-distancekernel="powerlaw",datatype="known epidemic",nsim=10000,
-sus.par=matrix(c(0.08,2,"uniform","uniform",0,0,100,100,0.5,0.5),ncol=5,nrow=2),
-kernel.par=c(2,"gamma",1,0.01,0.5),suscov=SpatialData$cov)
+mcmcres2 <- epictmcmc(epidat = SpatialData$epi, type = "SIR", kerneltype = "distance",  
+kernelmatrix = SpatialData$dis, 
+distancekernel = "powerlaw", datatype = "known epidemic", nsim = 10000, 
+sus.par = c(2, "gamma", 1, 0.01, 0.5), 
+kernel.par = c(2, "gamma", 1, 0.01, 0.5),  seedval  =  524837)
 
 ## performing the MCMC-tool for analyzing the partially observed spatial data
 ## (unknown infection times) under the SIR distance-based continuous ILM:
-mcmcres22<-epictmcmc(epidat=SpatialData$epi,type="SIR",kerneltype="distance",
-kernelmatrix=SpatialData$dis,distancekernel="powerlaw",
-datatype="known removal",nsim=50000,blockupdate=c(1,10),
-sus.par=matrix(c(0.08,2,"gamma","gamma",1,4,1,2,0.5,0.5),ncol=5,nrow=2),
-kernel.par=c(2,"gamma",4,2,0.5),delta=c(1,2,4,2),
-suscov=SpatialData$cov,periodproposal=c(1,1))
+mcmcres22 <- epictmcmc(epidat = SpatialData$epi, type = "SIR", kerneltype = "distance", 
+kernelmatrix = SpatialData$dis, distancekernel = "powerlaw", 
+datatype = "known removal", nsim = 50000,  sus.par = c(2, "gamma", 1, 0.01, 0.5), 
+kernel.par = c(2, "gamma", 4, 2, 0.5), delta = c(1, 2, 4, 2),  seedval  =  524837)
 
 ## distance-based and network-based SIR ILMs ##
 data(SpatialNetData)
 ## performing the MCMC-tool for analyzing the fully observed spatial and network data
 ## under the SIR distance-based and network-based continuous-time ILM:
-mcmcres3<-epictmcmc(epidat=SpatialNetData$epi,type="SIR",kerneltype="both",
-kernelmatrix=list(SpatialNetData$dis,SpatialNetData$net),
-distancekernel="powerlaw",datatype="known epidemic",nsim=10000,
-sus.par=matrix(c(0.08,0.2,"gamma","gamma",1,1,0.01,0.01,0.5,0.5),ncol=5,nrow=2),
-kernel.par=matrix(c(5,0.5,"gamma","gamma",1,1,0.01,0.01,0.5,0.5),ncol=5,nrow=2),
-suscov=SpatialNetData$cov)
+mcmcres3 <- epictmcmc(epidat = SpatialNetData$epi, type = "SIR", kerneltype = "both", 
+kernelmatrix = list(SpatialNetData$dis, SpatialNetData$net), 
+distancekernel = "powerlaw", datatype = "known epidemic", nsim = 10000, 
+sus.par = matrix(c(0.08, 0.2, "gamma", "gamma", 1, 1, 0.01, 0.01, 0.1, 0.5), ncol = 5, nrow = 2), 
+kernel.par = matrix(c(5, 0.5, "gamma", "gamma", 1, 1, 0.01, 0.01, 0.5, 1), ncol = 5, nrow = 2), 
+suscov = SpatialNetData$cov,  seedval  =  524837)
 
 ## network-based SIR ILMs ##
 data(NetworkData)
 ## performing the MCMC-tool for analyzing the fully observed network data 
 ## under the SIR network-based continuous-time ILM:
-mcmcres4<-epictmcmc(epidat=NetworkData$epi,type="SIR",kerneltype="network",
-kernelmatrix= NetworkData$net,datatype="known epidemic",nsim=10000,
-sus.par=matrix(c(0.08,0.5,"gamma","gamma",1,1,1,1,0.5,0.1),ncol=5,nrow=2),
-suscov=NetworkData$cov)
+mcmcres4 <- epictmcmc(epidat = NetworkData$epi, type = "SIR", kerneltype = "network", 
+kernelmatrix =  NetworkData$net, datatype = "known epidemic", nsim = 10000, 
+sus.par = matrix(c(0.08, 0.5, "gamma", "gamma", 1, 1, 1, 1, 0.1, 0.5), ncol = 5, nrow = 2), 
+suscov = NetworkData$cov,  seedval  =  524837)
 
 ## network-based SINR ILMs ##
 data(NetworkDataSINR)
 ## performing the MCMC-tool for analyzing the fully observed network data
 ## under the SINR network-based continuous-time ILM:
-mcmcres5<-epictmcmc(epidat=NetworkDataSINR$epi,type="SINR",kerneltype="network",
-kernelmatrix=NetworkDataSINR$net,datatype="known epidemic",nsim=10000,
-sus.par=matrix(c(0.08,0.2,"gamma","gamma",1,1,0.01,0.01,0.5,0.5),ncol=5,nrow=2),
-suscov= NetworkDataSINR$cov)
+mcmcres5 <- epictmcmc(epidat = NetworkDataSINR$epi, type = "SINR", kerneltype = "network", 
+kernelmatrix = NetworkDataSINR$net, datatype = "known epidemic", nsim = 10000, 
+sus.par = matrix(c(0.08, 0.2, "gamma", "gamma", 1, 1, 0.01, 0.01, 0.05, 0.5), ncol = 5, nrow = 2), 
+suscov =  NetworkDataSINR$cov,  seedval  =  524837)
 }
 }
 \keyword{Bayesian Inference}

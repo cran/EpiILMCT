@@ -66,7 +66,7 @@ diseases. \emph{Bayesian Analysis}, 4(3):465-496.
 }
 
 \examples{
-library( EpiILMCT )
+set.seed(66)
 loc<- matrix(cbind(runif(50,0,10),runif(50,0,10)),ncol=2,nrow=50)
 net1<- contactnet(type="powerlaw",location=loc,beta=1.5,alpha=0.5,
        plot=TRUE)

@@ -147,8 +147,8 @@ kernel.par = c(2, "gamma", 1, 0.01, 0.5),  seedval  =  524837)
 ## (unknown infection times) under the SIR distance-based continuous ILM:
 mcmcres22 <- epictmcmc(epidat = SpatialData$epi, type = "SIR", kerneltype = "distance", 
 kernelmatrix = SpatialData$dis, distancekernel = "powerlaw", 
-datatype = "known removal", nsim = 50000,  sus.par = c(2, "gamma", 1, 0.01, 0.5), 
-kernel.par = c(2, "gamma", 4, 2, 0.5), delta = c(1, 2, 4, 2),  seedval  =  524837)
+datatype = "known removal", nsim = 50000,  sus.par = c(2, "gamma", 1, 0.01, 0.8), 
+kernel.par = c(2, "gamma", 1, 0.01, 0.5), delta = c(1, 2, 4, 2),  seedval  =  524837)
 
 ## distance-based and network-based SIR ILMs ##
 data(SpatialNetData)

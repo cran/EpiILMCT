@@ -8,7 +8,7 @@ This is a simulated epidemic data set of population size = 50 individuals that w
 
 \deqn{\lambda_{jt} = \alpha \sum_{i \in I_{t}}{d_{ij}^{-\beta}}}{\lambda_{jt} = \alpha \sum_{i in I_t}{d_{ij}^{-\beta}}}
 
-The infectious period is assumed to follow exponential distribution with rate \eqn{\delta}. The epidemic was simulated with the following parameter values: \eqn{\alpha = 1.5}{\alpha = 1.5}, \eqn{\beta = 3} and \eqn{\delta = 2}. 
+The infectious period is assumed to follow exponential distribution with rate \eqn{\lambda}. The epidemic was simulated with the following parameter values: \eqn{\alpha = 1.5}{\alpha = 1.5}, \eqn{\beta = 3} and \eqn{\delta = 2}. 
 
 The data set file contains the XY coordinates of individuals, the Euclidean distance matrix, and the simulated epidemic data set.
 }

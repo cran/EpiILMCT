@@ -1,4 +1,4 @@
-fd2cf2871c2978237d97e6e824e61f69 *DESCRIPTION
+1c3b7406a34320b54a2405dc6a9b162d *DESCRIPTION
 b94911f80c0c0589859f46657158f5e5 *NAMESPACE
 35e271b4438bec8211f488e8ff17dc3b *R/datgen.r
 9e45fb4f0a0b82d8a7180ca0b66934e8 *R/epictmcmc.r
@@ -9,14 +9,14 @@ ce3359e8662bdeb70269dd26a63dc2e3 *R/loglikelihoodepiILM.r
 99e37b8483b615d8b2e974b99768eb75 *data/NetworkDataSINR.RData
 85ebf255485cae4e1ab9c2e1cf40ce51 *data/SpatialData.RData
 e5a5a798fab44b93ee7e2b251965d6c6 *data/SpatialNetData.RData
-9b5b5195b43d91a2b46789c197d6090e *data/tswv.RData
+189dd859660568ba551f606a27342fe2 *data/tswv.RData
 cb2633e52f7e10698922ce52ef3e4197 *man/NetworkData.Rd
 66d9469e5e8ab8b827e2a53e9169c721 *man/NetworkDataSINR.Rd
-f83f3c58afa586056ac8a27ed51208d0 *man/SpatialData.Rd
+e8c3725937d9ee957c0a9258b1196a25 *man/SpatialData.Rd
 9c7f6be1082991132d480082c426b534 *man/SpatialNetData.Rd
 6836b842b2a3818484a847055a6b0337 *man/contactnet.Rd
 95a7837113db8b0f484211cdbfd350ed *man/datagen.Rd
-8c42173552ea35b14a25f5404528d63d *man/epictmcmc.Rd
+2cb4fc222e5a12d7ead36b44132c9be0 *man/epictmcmc.Rd
 86be3ca95af390f851ecd5d6a5808caa *man/epiplot.Rd
 eac311f246e9d3453a31117675584a47 *man/figures/SINR-rate.jpg
 bc58d920b780760d16cf5d4530b7fa1c *man/figures/SIR-rate.jpg

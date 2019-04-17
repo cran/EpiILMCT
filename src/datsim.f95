@@ -111,7 +111,7 @@ contains
                epidat(j, 1)  = observedepi1(j, 1)
                epidat(j, 4)  = observedepi1(j, 4)
                epidat(j, 3)  = randgamma2(delta1, 1.0_c_double/delta2)
-               epidat(j, 2)  = epidat(observednum, 4) + epidat(observednum, 3)
+               epidat(j, 2)  = epidat(j, 4) + epidat(j, 3)
             else
                epidat(j, :)  = observedepi1(j, :)
             end if
@@ -175,8 +175,8 @@ contains
 
                 if ( (epidat(ctr, 4) .gt. tmax) ) then
                     epidat(ctr, 3) = 0.0_c_double
-                    epidat(ctr, 4) = 0.0_c_double
-                    epidat(ctr, 2) = 0.0_c_double
+                    epidat(ctr, 4) = Inf
+                    epidat(ctr, 2) = Inf
                     exit
                 end if
 
@@ -302,8 +302,8 @@ contains
 
                 if ( (epidat(ctr, 4) .gt. tmax) ) then
                     epidat(ctr, 3) = 0.0_c_double
-                    epidat(ctr, 4) = 0.0_c_double
-                    epidat(ctr, 2) = 0.0_c_double
+                    epidat(ctr, 4) = Inf
+                    epidat(ctr, 2) = Inf
                     exit
                 end if
 

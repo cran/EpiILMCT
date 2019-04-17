@@ -5,14 +5,13 @@
   \code{plot.epictmcmc} is an S3 method that plots the output of an S3 object of class \code{epictmcmc}. 
 }
 \usage{
-  \method{plot}{epictmcmc}(x, epidat, start = NULL, end = NULL, thin = NULL, 
-  ask = TRUE, trace = TRUE, density = TRUE, auto.layout = TRUE, ...)
+  \method{plot}{epictmcmc}(x, epi = NULL, start = NULL, end = NULL, 
+  thin = NULL, ...)
 }
 \arguments{
   \item{x}{an S3 object of class \code{epictmcmc} (i.e. the output of the \code{epictmcmc} function).}
-  \item{epidat}{Epidemic data in the format of \code{\link{datagen}} output.}
+  \item{epi}{epidemic data of class \code{datagen}.}
   \item{start, end, thin}{options for creating \code{\link{mcmc}} object.}
-  \item{ask, trace, density, auto.layout}{ options for \code{\link{plot.mcmc}}.}
   \item{...}{additional arguments that are passed to the generic \code{plot} function.}
 }
 \value{
@@ -21,3 +20,4 @@
 \seealso{
   \code{\link{epictmcmc}}, \code{\link{print.epictmcmc}}, \code{\link{summary.epictmcmc}}, \code{\link{mcmc}}, \code{\link{plot.mcmc}}.
 }
+\keyword{plot}

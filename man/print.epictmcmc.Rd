@@ -10,7 +10,7 @@
 \arguments{
   \item{x}{an S3 object of class \code{epictmcmc} (i.e. the output of the \code{epictmcmc} function).}
   \item{digits}{the number of printed digits of the estimates. Default value is 6. }
-  \item{...}{ additional arguments that are passed to the generic \code{print} function }
+  \item{...}{additional arguments that are passed to the generic \code{print} function }
 }
 \value{
   Formatted output of a \code{epictmcmc} object.

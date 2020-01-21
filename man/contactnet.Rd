@@ -61,8 +61,7 @@ An object of class ``contactnet'' that has a list of:
 	}
 }
 
-\references{
-  
+\references{  
   Jewell, C. P., Kypraios, T., Neal, P., and Roberts, G. O. (2009). Bayesian analysis for emerging infectious
 diseases. \emph{Bayesian Analysis}, 4(3):465-496.
      

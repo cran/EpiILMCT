@@ -1,4 +1,4 @@
-bf1b1490543faea15f4faec5083a29d2 *DESCRIPTION
+e5d17f9c565a4f75023a13a3310fe8c7 *DESCRIPTION
 c5c6562f4cc18fcdb72f6a408b78384e *NAMESPACE
 acfb258f0a65d8eb77bed62ecc003693 *R/datgen.r
 68feb1a0b884639788007b485f1865d3 *R/epictmcmc.r
@@ -12,6 +12,7 @@ fd535a25f075a1f5f7488c77fe1877ea *data/NetworkData.RData
 08108240433e3fe43faa4dfd864f5f4e *data/SpatialData.RData
 7622833f0a44ded9f9da1b725338d555 *data/SpatialNetData.RData
 acbfc92954b04cc0ac4bc83c5529681f *data/tswv.RData
+37f52551a2b92ef623a94490f5cdd001 *inst/CITATION
 626050ff417f5840ecc567d732575b27 *man/NetworkData.Rd
 76ffc44e95ba3ad852902005af178353 *man/NetworkDataSINR.Rd
 f4bbf23738aafef294144413ff2fa16b *man/SpatialData.Rd
